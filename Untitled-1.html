@@ -384,6 +384,28 @@ button {
     color: #6b7280;
 }
 
+.review-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 14px;
+}
+
+.review-images {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.review-images img {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    background: #f3f4f6;
+    border-radius: 6px;
+}
+
 /* PRINT */
 
 @media print {
@@ -448,6 +470,10 @@ button {
     .store-directory {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .review-images {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media(max-width: 600px) {
@@ -499,6 +525,11 @@ button {
     <button class="tab"
             onclick="showPage('dashboardPage', this)">
         Dashboard
+    </button>
+
+    <button class="tab"
+            onclick="showPage('managerPage', this)">
+        Manager Dashboard
     </button>
 
     <button class="tab"
@@ -1038,6 +1069,25 @@ placeholder="Enter remarks"></textarea>
 
 </section>
 
+<!-- =====================================================
+     MANAGER DASHBOARD
+===================================================== -->
+
+<section id="managerPage" class="page">
+<div class="card">
+    <h2>Manager Dashboard - Image Review</h2>
+    <p style="color:#6b7280;font-size:13px;">
+        Review the latest saved floor walk and before/after images for every store.
+    </p>
+    <div class="buttons no-print">
+        <button class="success" onclick="exportManagerPPT()">Download Manager Image Review PPT</button>
+        <button class="primary" onclick="exportExcelDashboard()">Download Excel Dashboard</button>
+    </div>
+    <div id="managerSummary" class="dashboard-grid"></div>
+    <div id="managerImageReview"></div>
+</div>
+</section>
+
 
 <!-- =====================================================
      MONTHLY
@@ -1168,6 +1218,7 @@ Delete All Records
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 
 /* =========================================================
@@ -1245,6 +1296,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     calculateScore();
     renderDashboard();
+    renderManagerDashboard();
     renderMonthly();
     renderHistory();
 
@@ -1284,6 +1336,7 @@ function showPage(pageId, button) {
     button.classList.add("active");
 
     renderDashboard();
+    renderManagerDashboard();
     renderMonthly();
     renderHistory();
 }
@@ -2088,6 +2141,142 @@ function renderStoreDirectory(records) {
             </div>
         `;
     }).join("");
+}
+
+function getLatestStoreRecords(records) {
+    const latest = {};
+    records.forEach(record => {
+        const code = record.storeCode || stores.find(item => item.name === record.store)?.code;
+        if (code && (!latest[code] || record.id > latest[code].id)) {
+            latest[code] = record;
+        }
+    });
+    return latest;
+}
+
+function renderManagerDashboard() {
+    const records = getRecords();
+    const latest = getLatestStoreRecords(records);
+    const checked = stores.filter(store => latest[store.code]).length;
+    const imageStores = stores.filter(store =>
+        latest[store.code] && (latest[store.code].images || []).some(image => image.before || image.after)
+    ).length;
+    const avgScore = checked
+        ? Math.round(stores.reduce((sum, store) => sum + (latest[store.code]?.score || 0), 0) / checked)
+        : 0;
+
+    document.getElementById("managerSummary").innerHTML = `
+        <div class="metric"><div class="metric-title">Stores Checked</div><div class="metric-value">${checked}/${stores.length}</div></div>
+        <div class="metric"><div class="metric-title">Average Score</div><div class="metric-value good">${avgScore}%</div></div>
+        <div class="metric"><div class="metric-title">Stores With Images</div><div class="metric-value">${imageStores}</div></div>
+    `;
+
+    document.getElementById("managerImageReview").innerHTML = stores.map(store => {
+        const record = latest[store.code];
+        const images = record ? (record.images || []).filter(image => image.before || image.after) : [];
+        const imageMarkup = images.length
+            ? images.map((image, index) => `
+                <div class="review-images">
+                    ${image.before ? `<div><strong>Before ${index + 1}</strong><img src="${image.before}" alt="Before image"></div>` : ""}
+                    ${image.after ? `<div><strong>After ${index + 1}</strong><img src="${image.after}" alt="After image"></div>` : ""}
+                </div>
+            `).join("")
+            : `<p style="color:#9ca3af;">No before/after images saved.</p>`;
+        return `
+            <div class="review-card">
+                <strong>${store.code} - ${escapeHTML(store.name)}</strong>
+                <div style="margin-top:5px;color:#6b7280;">
+                    ${record ? `${formatDate(record.date)} | Score ${record.score}% | ${record.status}` : "No floor walk recorded"}
+                </div>
+                ${imageMarkup}
+            </div>
+        `;
+    }).join("");
+}
+
+function exportExcelDashboard() {
+    if (typeof XLSX === "undefined") {
+        alert("Excel export is unavailable. Check your internet connection and try again.");
+        return;
+    }
+
+    const records = getRecords();
+    const latest = getLatestStoreRecords(records);
+    const summary = stores.map(store => {
+        const record = latest[store.code];
+        const images = record ? (record.images || []).filter(image => image.before || image.after) : [];
+        return {
+            "Store Code": store.code,
+            "Store Name": store.name,
+            "Last Walk Date": record ? record.date : "",
+            "VM": record ? record.vm || "" : "",
+            "Score": record ? record.score : "",
+            "Issues": record ? record.issues : "",
+            "Status": record ? record.status : "NOT CHECKED",
+            "Image Pairs": images.length,
+            "Key Issues": record ? record.keyIssues || "" : "",
+            "Corrections": record ? record.corrections || "" : ""
+        };
+    });
+    const detail = records.map(record => ({
+        "Store Code": record.storeCode || "",
+        "Store Name": record.store || "",
+        "Date": record.date,
+        "VM": record.vm || "",
+        "Score": record.score,
+        "Issues": record.issues,
+        "Status": record.status,
+        "Image Pairs": (record.images || []).filter(image => image.before || image.after).length,
+        "Remarks": record.remarks || ""
+    }));
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(summary), "Store Dashboard");
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(detail), "Walk History");
+    XLSX.writeFile(workbook, `VM-Manager-Dashboard-${new Date().toISOString().split("T")[0]}.xlsx`);
+}
+
+async function exportManagerPPT() {
+    if (typeof PptxGenJS === "undefined") {
+        alert("PowerPoint export is unavailable. Check your internet connection and try again.");
+        return;
+    }
+    const records = getRecords();
+    if (!records.length) {
+        alert("Save at least one floor walk before creating the manager report.");
+        return;
+    }
+    const latest = getLatestStoreRecords(records);
+    const pptx = new PptxGenJS();
+    pptx.layout = "LAYOUT_WIDE";
+    pptx.author = "VM Daily Floor Walk";
+    pptx.title = "Manager Image Review";
+    const cover = pptx.addSlide();
+    cover.background = { color: "111827" };
+    cover.addText("MANAGER IMAGE REVIEW", { x: 0.7, y: 2.2, w: 12, h: 0.5, fontSize: 28, bold: true, color: "FFFFFF", align: "center" });
+    cover.addText("Store-wise Before & After Report", { x: 0.7, y: 2.9, w: 12, h: 0.35, fontSize: 18, color: "D1D5DB", align: "center" });
+
+    stores.forEach(store => {
+        const record = latest[store.code];
+        const slide = pptx.addSlide();
+        slide.addText(`${store.code} - ${store.name}`, { x: 0.45, y: 0.3, w: 12.4, h: 0.4, fontSize: 18, bold: true });
+        if (!record) {
+            slide.addText("No floor walk recorded.", { x: 0.7, y: 3, w: 12, h: 0.4, fontSize: 18, color: "D97706", align: "center" });
+            return;
+        }
+        slide.addText(`Date: ${formatDate(record.date)}   Score: ${record.score}%   Issues: ${record.issues}   Status: ${record.status}`, { x: 0.55, y: 0.85, w: 12, h: 0.3, fontSize: 11 });
+        const images = (record.images || []).filter(image => image.before || image.after);
+        if (!images.length) {
+            slide.addText("No before/after images saved.", { x: 0.7, y: 3, w: 12, h: 0.4, fontSize: 18, color: "D97706", align: "center" });
+        } else {
+            const image = images[0];
+            if (image.before) slide.addImage({ data: image.before, x: 0.65, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+            if (image.after) slide.addImage({ data: image.after, x: 7.05, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+            slide.addText("BEFORE", { x: 0.65, y: 5.8, w: 5.55, h: 0.25, bold: true, color: "991B1B", align: "center" });
+            slide.addText("AFTER", { x: 7.05, y: 5.8, w: 5.55, h: 0.25, bold: true, color: "15803D", align: "center" });
+        }
+    });
+    await pptx.writeFile({ fileName: `VM-Manager-Image-Review-${new Date().toISOString().split("T")[0]}.pptx` });
 }
 
 async function exportStoreWisePPT() {
