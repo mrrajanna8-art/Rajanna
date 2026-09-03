@@ -1122,6 +1122,11 @@ Print Monthly Report
 
 <div class="buttons no-print">
 
+<button class="success"
+onclick="exportStoreWisePPT()">
+    Download Store-wise PPT
+</button>
+
 <button class="danger"
 onclick="deleteAll()">
 Delete All Records
@@ -1161,6 +1166,8 @@ Delete All Records
 </div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
 <script>
 
 /* =========================================================
@@ -2081,6 +2088,102 @@ function renderStoreDirectory(records) {
             </div>
         `;
     }).join("");
+}
+
+async function exportStoreWisePPT() {
+    if (typeof PptxGenJS === "undefined") {
+        alert("PowerPoint export is unavailable. Check your internet connection and try again.");
+        return;
+    }
+
+    const records = getRecords();
+    if (!records.length) {
+        alert("Save at least one floor walk before creating the PowerPoint.");
+        return;
+    }
+
+    const latestByStore = {};
+    records.forEach(record => {
+        const code = record.storeCode || stores.find(item => item.name === record.store)?.code;
+        if (code && (!latestByStore[code] || record.id > latestByStore[code].id)) {
+            latestByStore[code] = record;
+        }
+    });
+
+    const pptx = new PptxGenJS();
+    pptx.layout = "LAYOUT_WIDE";
+    pptx.author = "VM Daily Floor Walk";
+    pptx.subject = "Store-wise VM Before and After Report";
+    pptx.title = "Store-wise VM Before and After Report";
+    pptx.company = "VM Daily Floor Walk";
+
+    const titleSlide = pptx.addSlide();
+    titleSlide.background = { color: "111827" };
+    titleSlide.addText("STORE-WISE VM REPORT", {
+        x: 0.7, y: 2.1, w: 12, h: 0.6,
+        fontSize: 28, bold: true, color: "FFFFFF", align: "center"
+    });
+    titleSlide.addText("Before & After Images", {
+        x: 0.7, y: 2.85, w: 12, h: 0.4,
+        fontSize: 18, color: "D1D5DB", align: "center"
+    });
+    titleSlide.addText(formatDate(new Date().toISOString().split("T")[0]), {
+        x: 0.7, y: 3.45, w: 12, h: 0.3,
+        fontSize: 12, color: "D1D5DB", align: "center"
+    });
+
+    stores.forEach(store => {
+        const record = latestByStore[store.code];
+        const slide = pptx.addSlide();
+        slide.background = { color: "F9FAFB" };
+        slide.addText(`${store.code} - ${store.name}`, {
+            x: 0.45, y: 0.3, w: 12.4, h: 0.45,
+            fontSize: 18, bold: true, color: "111827"
+        });
+
+        if (!record) {
+            slide.addText("No floor walk recorded for this store.", {
+                x: 0.6, y: 2.8, w: 12, h: 0.4,
+                fontSize: 18, color: "D97706", align: "center"
+            });
+            return;
+        }
+
+        slide.addText(
+            `Date: ${formatDate(record.date)}   VM: ${record.vm || "-"}   Score: ${record.score}%   Status: ${record.status}`,
+            { x: 0.55, y: 0.85, w: 12, h: 0.3, fontSize: 11, color: "374151" }
+        );
+
+        const images = (record.images || []).filter(image => image.before || image.after);
+        if (!images.length) {
+            slide.addText("No before/after images attached.", {
+                x: 0.6, y: 2.8, w: 12, h: 0.4,
+                fontSize: 18, color: "D97706", align: "center"
+            });
+        } else {
+            const image = images[0];
+            if (image.before) {
+                slide.addText("BEFORE", { x: 0.55, y: 1.35, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "991B1B", align: "center" });
+                slide.addImage({ data: image.before, x: 0.65, y: 1.65, w: 5.55, h: 3.65, sizingContain: true });
+                if (image.beforeCaption) slide.addText(image.beforeCaption, { x: 0.65, y: 5.4, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
+            }
+            if (image.after) {
+                slide.addText("AFTER", { x: 6.95, y: 1.35, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "15803D", align: "center" });
+                slide.addImage({ data: image.after, x: 7.05, y: 1.65, w: 5.55, h: 3.65, sizingContain: true });
+                if (image.afterCaption) slide.addText(image.afterCaption, { x: 7.05, y: 5.4, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
+            }
+        }
+
+        const notes = [record.keyIssues, record.corrections, record.remarks].filter(Boolean).join(" | ");
+        if (notes) {
+            slide.addText(`Notes: ${notes}`, {
+                x: 0.55, y: 6.05, w: 12, h: 0.45,
+                fontSize: 10, color: "374151", breakLine: false
+            });
+        }
+    });
+
+    await pptx.writeFile({ fileName: `VM-Store-Wise-Report-${new Date().toISOString().split("T")[0]}.pptx` });
 }
 
 
