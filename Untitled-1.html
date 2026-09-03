@@ -1,0 +1,2557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM Daily Floor Walk Dashboard</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+header {
+    background: #111827;
+    color: white;
+    padding: 22px 30px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+header p {
+    margin: 6px 0 0;
+    color: #d1d5db;
+}
+
+.container {
+    max-width: 1400px;
+    margin: auto;
+    padding: 22px;
+}
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.tab {
+    border: 0;
+    background: white;
+    padding: 12px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.tab.active {
+    background: #111827;
+    color: white;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.card h2 {
+    margin-top: 0;
+}
+
+/* DASHBOARD */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metric {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+
+.metric-title {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.metric-value {
+    font-size: 30px;
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.good {
+    color: #15803d;
+}
+
+.warning {
+    color: #d97706;
+}
+
+.bad {
+    color: #dc2626;
+}
+
+/* FORMS */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* CHECKLIST */
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #111827;
+    color: white;
+    padding: 11px;
+    text-align: left;
+    font-size: 13px;
+}
+
+td {
+    border: 1px solid #e5e7eb;
+    padding: 9px;
+    font-size: 13px;
+}
+
+.section-row td {
+    background: #e5e7eb;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.check-cell {
+    text-align: center;
+    width: 70px;
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* SCORE */
+
+.score-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.score-card {
+    padding: 18px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.score-number {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+/* BUTTONS */
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+button {
+    border: 0;
+    padding: 11px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.primary {
+    background: #111827;
+    color: white;
+}
+
+.secondary {
+    background: #e5e7eb;
+}
+
+.success {
+    background: #15803d;
+    color: white;
+}
+
+.danger {
+    background: #dc2626;
+    color: white;
+}
+
+/* =========================================================
+   BEFORE / AFTER IMAGE SECTION
+========================================================= */
+
+.image-section {
+    margin-top: 20px;
+}
+
+.image-pair {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 18px;
+    background: #fafafa;
+}
+
+.image-pair-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 10px;
+}
+
+.image-pair-title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.image-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.image-box {
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    min-height: 220px;
+    padding: 12px;
+    background: white;
+    text-align: center;
+}
+
+.image-box h4 {
+    margin: 5px 0 12px;
+}
+
+.image-preview {
+    width: 100%;
+    max-height: 300px;
+    object-fit: contain;
+    border-radius: 6px;
+    display: none;
+    margin-bottom: 10px;
+}
+
+.image-placeholder {
+    min-height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.image-caption {
+    margin-top: 8px;
+}
+
+.image-caption input {
+    width: 100%;
+}
+
+.remove-image {
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 12px;
+    padding: 7px 10px;
+}
+
+/* MONTHLY */
+
+.monthly-table th,
+.monthly-table td {
+    text-align: center;
+}
+
+.month-total {
+    font-weight: bold;
+    background: #f3f4f6;
+}
+
+/* CATEGORY */
+
+.category-bar {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.category-fill {
+    height: 100%;
+    width: 0;
+    background: #111827;
+}
+
+.store-directory {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.store-status {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    background: #f9fafb;
+}
+
+.store-status strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.store-status small {
+    color: #6b7280;
+}
+
+/* PRINT */
+
+@media print {
+
+    body {
+        background: white;
+    }
+
+    header {
+        background: white;
+        color: black;
+        border-bottom: 2px solid #111;
+    }
+
+    header p {
+        color: black;
+    }
+
+    .tabs,
+    .buttons,
+    .no-print,
+    .remove-image {
+        display: none !important;
+    }
+
+    .page {
+        display: block !important;
+    }
+
+    .card,
+    .metric {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+
+    .image-pair {
+        break-inside: avoid;
+    }
+
+    .image-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* MOBILE */
+
+@media(max-width: 900px) {
+
+    .dashboard-grid,
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .score-box {
+        grid-template-columns: 1fr;
+    }
+
+    .image-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .store-directory {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width: 600px) {
+
+    .container {
+        padding: 12px;
+    }
+
+    .dashboard-grid,
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        padding: 18px;
+    }
+
+    header h1 {
+        font-size: 22px;
+    }
+
+    .store-directory {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>VM DAILY FLOOR WALK</h1>
+    <p>Visual Merchandising Performance Dashboard</p>
+</header>
+
+<div class="container">
+
+<!-- =====================================================
+     NAVIGATION
+===================================================== -->
+
+<div class="tabs no-print">
+
+    <button class="tab active"
+            onclick="showPage('walkPage', this)">
+        Daily Floor Walk
+    </button>
+
+    <button class="tab"
+            onclick="showPage('dashboardPage', this)">
+        Dashboard
+    </button>
+
+    <button class="tab"
+            onclick="showPage('monthlyPage', this)">
+        Monthly Summary
+    </button>
+
+    <button class="tab"
+            onclick="showPage('historyPage', this)">
+        History
+    </button>
+
+</div>
+
+
+<!-- =====================================================
+     DAILY FLOOR WALK
+===================================================== -->
+
+<section id="walkPage" class="page active">
+
+<div class="card">
+
+<h2>Floor Walk Details</h2>
+
+<div class="form-grid">
+
+    <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="walkDate">
+    </div>
+
+    <div class="form-group">
+        <label for="storeSelect">Store</label>
+        <select id="storeSelect" onchange="updateSelectedStore()"></select>
+    </div>
+
+    <div class="form-group">
+        <label for="storeName">Store Name</label>
+        <input type="text" id="storeName" readonly>
+    </div>
+
+    <div class="form-group">
+        <label>VM Name</label>
+        <input type="text"
+               id="vmName"
+               placeholder="Enter VM name">
+    </div>
+
+    <div class="form-group">
+        <label>Floor Walk Time</label>
+        <input type="time" id="walkTime">
+    </div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     CHECKLIST
+===================================================== -->
+
+<div class="card">
+
+<h2>Daily VM Checklist</h2>
+
+<div class="table-wrap">
+
+<table id="checklistTable">
+
+<thead>
+<tr>
+    <th>Area</th>
+    <th>Checkpoint</th>
+    <th class="check-cell">OK</th>
+    <th class="check-cell">Issue</th>
+    <th>Remarks</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr class="section-row">
+<td colspan="5">1. Entrance & Windows</td>
+</tr>
+
+<tr data-category="Entrance">
+<td>Entrance</td>
+<td>Window displays clean, complete & aligned</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Entrance">
+<td>Entrance</td>
+<td>Entrance signage / posters updated</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Entrance">
+<td>Entrance</td>
+<td>Props, graphics & display elements in good condition</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">2. Mannequins</td>
+</tr>
+
+<tr data-category="Mannequins">
+<td>Mannequins</td>
+<td>Correct outfit as per VM guideline</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Mannequins">
+<td>Mannequins</td>
+<td>Styling, accessories & footwear correct</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Mannequins">
+<td>Mannequins</td>
+<td>Mannequins clean and properly positioned</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">3. Fixtures & Displays</td>
+</tr>
+
+<tr data-category="Fixtures">
+<td>Fixtures</td>
+<td>Tables / racks properly merchandised</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Fixtures">
+<td>Fixtures</td>
+<td>Product folding / hanging neat & consistent</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Fixtures">
+<td>Fixtures</td>
+<td>Size sequencing correct</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Fixtures">
+<td>Fixtures</td>
+<td>Colour blocking maintained</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">4. Product Availability</td>
+</tr>
+
+<tr data-category="Product">
+<td>Product</td>
+<td>Key displays fully stocked</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Product">
+<td>Product</td>
+<td>Fast-moving / priority products replenished</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Product">
+<td>Product</td>
+<td>Empty spaces identified and corrected</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">5. Signage & Pricing</td>
+</tr>
+
+<tr data-category="Signage">
+<td>Signage</td>
+<td>Price tags visible and correct</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Signage">
+<td>Signage</td>
+<td>Promotional signage displayed correctly</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Signage">
+<td>Signage</td>
+<td>Old / expired communication removed</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">6. Store Standards</td>
+</tr>
+
+<tr data-category="Store Standards">
+<td>Store Standards</td>
+<td>Fixtures dust-free & clean</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Store Standards">
+<td>Store Standards</td>
+<td>Mirrors / glass clean</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Store Standards">
+<td>Store Standards</td>
+<td>Floor free from cartons / clutter</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Store Standards">
+<td>Store Standards</td>
+<td>Hangers / fixtures aligned</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">7. Customer Journey</td>
+</tr>
+
+<tr data-category="Customer Journey">
+<td>Customer Journey</td>
+<td>Walkways clear</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Customer Journey">
+<td>Customer Journey</td>
+<td>Focal points visible from key entry areas</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Customer Journey">
+<td>Customer Journey</td>
+<td>Displays support current campaign / theme</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">8. Compliance</td>
+</tr>
+
+<tr data-category="Compliance">
+<td>Compliance</td>
+<td>VM guidelines followed</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Compliance">
+<td>Compliance</td>
+<td>Campaign execution checked</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Compliance">
+<td>Compliance</td>
+<td>Any deviation documented</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+
+<tr class="section-row">
+<td colspan="5">9. Action Points</td>
+</tr>
+
+<tr data-category="Action Points">
+<td>Action Points</td>
+<td>Issues assigned to responsible person</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+<tr data-category="Action Points">
+<td>Action Points</td>
+<td>Corrections completed before end of day</td>
+<td class="check-cell"><input type="checkbox" class="ok"></td>
+<td class="check-cell"><input type="checkbox" class="issue"></td>
+<td><input type="text" class="remark"></td>
+</tr>
+
+</tbody>
+</table>
+
+</div>
+
+
+<div class="score-box">
+
+<div class="score-card">
+    <div>CHECKED ITEMS</div>
+    <div class="score-number" id="checkedCount">0</div>
+</div>
+
+<div class="score-card">
+    <div>ISSUES</div>
+    <div class="score-number bad" id="issueCount">0</div>
+</div>
+
+<div class="score-card">
+    <div>VM SCORE</div>
+    <div class="score-number good" id="liveScore">0%</div>
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =====================================================
+     BEFORE / AFTER IMAGES
+===================================================== -->
+
+<div class="card image-section">
+
+<h2>📷 Before & After Images</h2>
+
+<p style="color:#6b7280;font-size:13px;">
+Upload photos showing the VM issue before correction and the
+same area after correction.
+</p>
+
+<div id="imagePairs"></div>
+
+<button class="primary no-print"
+        onclick="addImagePair()">
+    + Add Before / After
+</button>
+
+</div>
+
+
+<!-- =====================================================
+     SUMMARY
+===================================================== -->
+
+<div class="card">
+
+<h2>Floor Walk Summary</h2>
+
+<div class="form-grid">
+
+<div class="form-group">
+<label>Replenishment Required</label>
+<textarea id="replenishment"
+placeholder="Enter details"></textarea>
+</div>
+
+<div class="form-group">
+<label>Key Issues</label>
+<textarea id="keyIssues"
+placeholder="Enter key issues"></textarea>
+</div>
+
+<div class="form-group">
+<label>VM Corrections Required</label>
+<textarea id="corrections"
+placeholder="Enter corrections"></textarea>
+</div>
+
+<div class="form-group">
+<label>Remarks</label>
+<textarea id="remarks"
+placeholder="Enter remarks"></textarea>
+</div>
+
+</div>
+
+<div class="buttons">
+
+<button class="primary"
+        onclick="saveWalk()">
+    Save Floor Walk
+</button>
+
+<button class="success"
+        onclick="window.print()">
+    Print / Save PDF
+</button>
+
+<button class="secondary"
+        onclick="resetForm()">
+    New Floor Walk
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
+<section id="dashboardPage" class="page">
+
+<div class="dashboard-grid">
+
+<div class="metric">
+<div class="metric-title">Total Floor Walks</div>
+<div class="metric-value" id="dashWalks">0</div>
+</div>
+
+<div class="metric">
+<div class="metric-title">Average VM Score</div>
+<div class="metric-value good" id="dashScore">0%</div>
+</div>
+
+<div class="metric">
+<div class="metric-title">Total Issues</div>
+<div class="metric-value bad" id="dashIssues">0</div>
+</div>
+
+<div class="metric">
+<div class="metric-title">Pass Rate</div>
+<div class="metric-value good" id="dashPass">0%</div>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Category Performance</h2>
+
+<div id="categoryPerformance"></div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Recent Floor Walks</h2>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Store</th>
+<th>VM</th>
+<th>Score</th>
+<th>Issues</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="recentTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<div class="card">
+    <h2>Store Coverage</h2>
+    <p style="color:#6b7280;font-size:13px;">
+        Latest saved floor walk for each store.
+    </p>
+    <div id="storeDirectory" class="store-directory"></div>
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     MONTHLY
+===================================================== -->
+
+<section id="monthlyPage" class="page">
+
+<div class="card">
+
+<h2>Month-wise Performance</h2>
+
+<div class="form-grid no-print">
+
+<div class="form-group">
+<label>Select Year</label>
+<select id="yearSelect"
+onchange="renderMonthly()">
+</select>
+</div>
+
+</div>
+
+<div class="table-wrap">
+
+<table class="monthly-table">
+
+<thead>
+<tr>
+<th>Month</th>
+<th>Floor Walks</th>
+<th>Avg. Score</th>
+<th>Total Issues</th>
+<th>Pass</th>
+<th>Needs Improvement</th>
+</tr>
+</thead>
+
+<tbody id="monthlyTable"></tbody>
+
+<tfoot>
+
+<tr class="month-total">
+
+<td>GRAND TOTAL</td>
+<td id="grandWalks">0</td>
+<td id="grandScore">0%</td>
+<td id="grandIssues">0</td>
+<td id="grandPass">0</td>
+<td id="grandFail">0</td>
+
+</tr>
+
+</tfoot>
+
+</table>
+
+</div>
+
+<div class="buttons no-print">
+
+<button class="success"
+onclick="window.print()">
+Print Monthly Report
+</button>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     HISTORY
+===================================================== -->
+
+<section id="historyPage" class="page">
+
+<div class="card">
+
+<h2>Floor Walk History</h2>
+
+<div class="buttons no-print">
+
+<button class="danger"
+onclick="deleteAll()">
+Delete All Records
+</button>
+
+</div>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+<th>Date</th>
+<th>Store</th>
+<th>VM</th>
+<th>Score</th>
+<th>Issues</th>
+<th>Images</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="historyTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   GLOBAL DATA
+========================================================= */
+
+const categories = [
+    "Entrance",
+    "Mannequins",
+    "Fixtures",
+    "Product",
+    "Signage",
+    "Store Standards",
+    "Customer Journey",
+    "Compliance",
+    "Action Points"
+];
+
+const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+];
+
+const stores = [
+    { code: "P053", name: "PT-INORBIT MALL MADHAPUR-HYDERABAD" },
+    { code: "P096", name: "PT-FORUM SUJANA MALL-HYDERABAD" },
+    { code: "P202", name: "PT-SARATH CITY MALL-HYDERABAD" },
+    { code: "P215", name: "PT-L&T PANJAGUTTA-HYDERABAD" },
+    { code: "P376", name: "PT-MUKURAMPURA-KARIMNAGAR" },
+    { code: "P379", name: "PT-HANAMKONDA-WARANGAL" },
+    { code: "P460", name: "PT-KOMPALLY-HYDERABAD" },
+    { code: "P497", name: "PT-ASHOKA GOLDEN MALL-HYDERABAD" },
+    { code: "P670", name: "PT-BANDLAGUDA-HYDERABAD" },
+    { code: "P704", name: "PT-RC PURAM-HYDERABAD" },
+    { code: "P715", name: "PT-MADEENAGUDA-HYDERABAD" }
+];
+
+let imagePairCounter = 0;
+
+
+/* =========================================================
+   INITIALIZATION
+========================================================= */
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const today = new Date();
+
+    populateStores();
+
+    document.getElementById("walkDate").value =
+        today.toISOString().split("T")[0];
+
+    document.getElementById("walkTime").value =
+        today.toTimeString().slice(0,5);
+
+    populateYears();
+
+    setupChecklist();
+
+    /*
+       Start with one Before/After pair.
+    */
+    addImagePair();
+
+    calculateScore();
+    renderDashboard();
+    renderMonthly();
+    renderHistory();
+
+});
+
+function populateStores() {
+    const select = document.getElementById("storeSelect");
+    select.innerHTML = stores.map(store =>
+        `<option value="${store.code}">${store.code} - ${store.name}</option>`
+    ).join("");
+    updateSelectedStore();
+}
+
+function updateSelectedStore() {
+    const store = stores.find(item =>
+        item.code === document.getElementById("storeSelect").value
+    );
+    document.getElementById("storeName").value = store ? store.name : "";
+}
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function showPage(pageId, button) {
+
+    document.querySelectorAll(".page")
+        .forEach(page => page.classList.remove("active"));
+
+    document.getElementById(pageId)
+        .classList.add("active");
+
+    document.querySelectorAll(".tab")
+        .forEach(tab => tab.classList.remove("active"));
+
+    button.classList.add("active");
+
+    renderDashboard();
+    renderMonthly();
+    renderHistory();
+}
+
+
+/* =========================================================
+   CHECKLIST SETUP
+========================================================= */
+
+function setupChecklist() {
+
+    document.querySelectorAll(".ok")
+        .forEach(box => {
+
+            box.addEventListener("change", function() {
+
+                if (this.checked) {
+
+                    this.closest("tr")
+                        .querySelector(".issue")
+                        .checked = false;
+                }
+
+                calculateScore();
+
+            });
+
+        });
+
+
+    document.querySelectorAll(".issue")
+        .forEach(box => {
+
+            box.addEventListener("change", function() {
+
+                if (this.checked) {
+
+                    this.closest("tr")
+                        .querySelector(".ok")
+                        .checked = false;
+                }
+
+                calculateScore();
+
+            });
+
+        });
+
+}
+
+
+/* =========================================================
+   SCORE
+========================================================= */
+
+function calculateScore() {
+
+    const rows =
+        document.querySelectorAll(
+            "#checklistTable tbody tr[data-category]"
+        );
+
+    let total = rows.length;
+    let checked = 0;
+    let issues = 0;
+
+    rows.forEach(row => {
+
+        if (row.querySelector(".ok").checked) {
+            checked++;
+        }
+
+        if (row.querySelector(".issue").checked) {
+            issues++;
+        }
+
+    });
+
+    const score =
+        total
+            ? Math.round((checked / total) * 100)
+            : 0;
+
+    document.getElementById("checkedCount")
+        .textContent = checked;
+
+    document.getElementById("issueCount")
+        .textContent = issues;
+
+    document.getElementById("liveScore")
+        .textContent = score + "%";
+
+    const scoreElement =
+        document.getElementById("liveScore");
+
+    scoreElement.className = "score-number";
+
+    if (score >= 90) {
+
+        scoreElement.classList.add("good");
+
+    } else if (score >= 75) {
+
+        scoreElement.classList.add("warning");
+
+    } else {
+
+        scoreElement.classList.add("bad");
+
+    }
+
+    return {
+        total,
+        checked,
+        issues,
+        score
+    };
+}
+
+
+/* =========================================================
+   IMAGE PAIRS
+========================================================= */
+
+function addImagePair() {
+
+    imagePairCounter++;
+
+    const id = imagePairCounter;
+
+    const container =
+        document.getElementById("imagePairs");
+
+    const pair =
+        document.createElement("div");
+
+    pair.className = "image-pair";
+
+    pair.dataset.id = id;
+
+    pair.innerHTML = `
+
+        <div class="image-pair-header">
+
+            <div class="image-pair-title">
+                Before / After #${id}
+            </div>
+
+            <button
+                class="remove-image no-print"
+                onclick="removeImagePair(${id})">
+                Remove Pair
+            </button>
+
+        </div>
+
+        <div class="image-grid">
+
+            <!-- BEFORE -->
+
+            <div class="image-box">
+
+                <h4>BEFORE</h4>
+
+                <img
+                    id="beforePreview${id}"
+                    class="image-preview">
+
+                <div
+                    id="beforePlaceholder${id}"
+                    class="image-placeholder">
+                    No image selected
+                </div>
+
+                <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onchange="handleImage(
+                        this,
+                        'beforePreview${id}',
+                        'beforePlaceholder${id}'
+                    )">
+
+                <div class="image-caption">
+                    <input
+                        type="text"
+                        class="before-caption"
+                        placeholder="Before photo caption">
+                </div>
+
+            </div>
+
+
+            <!-- AFTER -->
+
+            <div class="image-box">
+
+                <h4>AFTER</h4>
+
+                <img
+                    id="afterPreview${id}"
+                    class="image-preview">
+
+                <div
+                    id="afterPlaceholder${id}"
+                    class="image-placeholder">
+                    No image selected
+                </div>
+
+                <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onchange="handleImage(
+                        this,
+                        'afterPreview${id}',
+                        'afterPlaceholder${id}'
+                    )">
+
+                <div class="image-caption">
+                    <input
+                        type="text"
+                        class="after-caption"
+                        placeholder="After photo caption">
+                </div>
+
+            </div>
+
+        </div>
+    `;
+
+    container.appendChild(pair);
+}
+
+
+/*
+   Compress uploaded image and convert to Base64.
+   This reduces localStorage usage.
+*/
+
+function handleImage(input, previewId, placeholderId) {
+
+    const file = input.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+
+        alert("Please select an image file.");
+
+        input.value = "";
+
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+
+        const img = new Image();
+
+        img.onload = function() {
+
+            const maxWidth = 1200;
+            const maxHeight = 1200;
+
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+
+                height =
+                    height * maxWidth / width;
+
+                width = maxWidth;
+            }
+
+            if (height > maxHeight) {
+
+                width =
+                    width * maxHeight / height;
+
+                height = maxHeight;
+            }
+
+            const canvas =
+                document.createElement("canvas");
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx =
+                canvas.getContext("2d");
+
+            ctx.drawImage(
+                img,
+                0,
+                0,
+                width,
+                height
+            );
+
+            const compressed =
+                canvas.toDataURL(
+                    "image/jpeg",
+                    0.75
+                );
+
+            const preview =
+                document.getElementById(previewId);
+
+            preview.src = compressed;
+
+            preview.dataset.base64 = compressed;
+
+            preview.style.display = "block";
+
+            document.getElementById(
+                placeholderId
+            ).style.display = "none";
+
+        };
+
+        img.src = event.target.result;
+
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+function removeImagePair(id) {
+
+    const pair =
+        document.querySelector(
+            `.image-pair[data-id="${id}"]`
+        );
+
+    if (pair) {
+        pair.remove();
+    }
+
+}
+
+
+/* =========================================================
+   COLLECT IMAGES
+========================================================= */
+
+function collectImages() {
+
+    const pairs =
+        document.querySelectorAll(".image-pair");
+
+    const images = [];
+
+    pairs.forEach(pair => {
+
+        const beforePreview =
+            pair.querySelector(
+                'img[id^="beforePreview"]'
+            );
+
+        const afterPreview =
+            pair.querySelector(
+                'img[id^="afterPreview"]'
+            );
+
+        const beforeCaption =
+            pair.querySelector(".before-caption").value;
+
+        const afterCaption =
+            pair.querySelector(".after-caption").value;
+
+        images.push({
+
+            before:
+                beforePreview.dataset.base64 || "",
+
+            after:
+                afterPreview.dataset.base64 || "",
+
+            beforeCaption,
+
+            afterCaption
+
+        });
+
+    });
+
+    return images;
+}
+
+
+/* =========================================================
+   SAVE FLOOR WALK
+========================================================= */
+
+function saveWalk() {
+
+    const result = calculateScore();
+
+    const date =
+        document.getElementById("walkDate").value;
+
+    const store =
+        document.getElementById("storeName")
+        .value.trim();
+
+    const storeCode =
+        document.getElementById("storeSelect").value;
+
+    if (!date) {
+
+        alert("Please select the date.");
+
+        return;
+    }
+
+    if (!store) {
+
+        alert("Please enter the store name.");
+
+        return;
+    }
+
+
+    const rows =
+        document.querySelectorAll(
+            "#checklistTable tbody tr[data-category]"
+        );
+
+    const checklist = [];
+
+    rows.forEach(row => {
+
+        checklist.push({
+
+            category:
+                row.dataset.category,
+
+            checkpoint:
+                row.children[1]
+                .textContent.trim(),
+
+            ok:
+                row.querySelector(".ok").checked,
+
+            issue:
+                row.querySelector(".issue").checked,
+
+            remark:
+                row.querySelector(".remark").value
+
+        });
+
+    });
+
+
+    const record = {
+
+        id: Date.now(),
+
+        date,
+        storeCode,
+        store,
+
+        vm:
+            document.getElementById("vmName").value,
+
+        time:
+            document.getElementById("walkTime").value,
+
+        checked:
+            result.checked,
+
+        issues:
+            result.issues,
+
+        total:
+            result.total,
+
+        score:
+            result.score,
+
+        status:
+            result.score >= 80
+                ? "PASS"
+                : "NEEDS IMPROVEMENT",
+
+        replenishment:
+            document.getElementById(
+                "replenishment"
+            ).value,
+
+        keyIssues:
+            document.getElementById(
+                "keyIssues"
+            ).value,
+
+        corrections:
+            document.getElementById(
+                "corrections"
+            ).value,
+
+        remarks:
+            document.getElementById(
+                "remarks"
+            ).value,
+
+        checklist,
+
+        images:
+            collectImages()
+
+    };
+
+
+    const records = getRecords();
+
+    records.push(record);
+
+    try {
+
+        localStorage.setItem(
+            "vmFloorWalkRecords",
+            JSON.stringify(records)
+        );
+
+    } catch(error) {
+
+        alert(
+            "The record could not be saved. " +
+            "The browser may have reached its storage limit. " +
+            "Try using fewer/lower-resolution images."
+        );
+
+        return;
+    }
+
+
+    alert(
+        "Floor Walk saved successfully with " +
+        record.images.length +
+        " Before/After image pair(s)."
+    );
+
+    renderDashboard();
+    renderMonthly();
+    renderHistory();
+
+}
+
+
+/* =========================================================
+   LOCAL STORAGE
+========================================================= */
+
+function getRecords() {
+
+    try {
+
+        return JSON.parse(
+            localStorage.getItem(
+                "vmFloorWalkRecords"
+            ) || "[]"
+        );
+
+    } catch(error) {
+
+        return [];
+    }
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function renderDashboard() {
+
+    const records = getRecords();
+
+    const walks = records.length;
+
+    const avgScore =
+        walks
+            ? Math.round(
+                records.reduce(
+                    (sum, r) => sum + r.score,
+                    0
+                ) / walks
+            )
+            : 0;
+
+    const issues =
+        records.reduce(
+            (sum, r) => sum + r.issues,
+            0
+        );
+
+    const pass =
+        records.filter(
+            r => r.score >= 80
+        ).length;
+
+    const passRate =
+        walks
+            ? Math.round(
+                (pass / walks) * 100
+            )
+            : 0;
+
+
+    document.getElementById(
+        "dashWalks"
+    ).textContent = walks;
+
+    document.getElementById(
+        "dashScore"
+    ).textContent = avgScore + "%";
+
+    document.getElementById(
+        "dashIssues"
+    ).textContent = issues;
+
+    document.getElementById(
+        "dashPass"
+    ).textContent = passRate + "%";
+
+
+    /* CATEGORY PERFORMANCE */
+
+    const categoryDiv =
+        document.getElementById(
+            "categoryPerformance"
+        );
+
+    categoryDiv.innerHTML = "";
+
+    categories.forEach(category => {
+
+        let total = 0;
+        let passed = 0;
+
+        records.forEach(record => {
+
+            (record.checklist || [])
+                .forEach(item => {
+
+                    if (
+                        item.category === category
+                    ) {
+
+                        total++;
+
+                        if (item.ok) {
+                            passed++;
+                        }
+
+                    }
+
+                });
+
+        });
+
+        const score =
+            total
+                ? Math.round(
+                    (passed / total) * 100
+                )
+                : 0;
+
+
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.style.marginBottom = "15px";
+
+        wrapper.innerHTML = `
+
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                margin-bottom:5px;
+                font-size:13px;
+                font-weight:bold;
+            ">
+
+                <span>${category}</span>
+
+                <span>${score}%</span>
+
+            </div>
+
+            <div class="category-bar">
+
+                <div
+                    class="category-fill"
+                    style="width:${score}%">
+                </div>
+
+            </div>
+        `;
+
+        categoryDiv.appendChild(wrapper);
+
+    });
+
+
+    /* RECENT */
+
+    const recent =
+        records
+            .slice()
+            .sort(
+                (a,b) => b.id - a.id
+            )
+            .slice(0,10);
+
+    const table =
+        document.getElementById(
+            "recentTable"
+        );
+
+    table.innerHTML = "";
+
+    recent.forEach(record => {
+
+        const tr =
+            document.createElement("tr");
+
+        tr.innerHTML = `
+
+            <td>${formatDate(record.date)}</td>
+
+            <td>${escapeHTML(record.store)}</td>
+
+            <td>${escapeHTML(record.vm || "-")}</td>
+
+            <td>
+                <strong>${record.score}%</strong>
+            </td>
+
+            <td>${record.issues}</td>
+
+            <td>
+                <strong class="${
+                    record.score >= 80
+                    ? "good"
+                    : "bad"
+                }">
+                    ${record.status}
+                </strong>
+            </td>
+        `;
+
+        table.appendChild(tr);
+
+    });
+
+    renderStoreDirectory(records);
+
+}
+
+function renderStoreDirectory(records) {
+    const directory = document.getElementById("storeDirectory");
+    const latestByStore = {};
+
+    records.forEach(record => {
+        const code = record.storeCode || stores.find(item => item.name === record.store)?.code;
+        if (code && (!latestByStore[code] || record.id > latestByStore[code].id)) {
+            latestByStore[code] = record;
+        }
+    });
+
+    directory.innerHTML = stores.map(store => {
+        const record = latestByStore[store.code];
+        if (!record) {
+            return `
+                <div class="store-status">
+                    <strong>${store.code}</strong>
+                    <small>${escapeHTML(store.name)}</small>
+                    <div class="warning" style="margin-top:8px;">Not checked</div>
+                </div>
+            `;
+        }
+
+        const statusClass = record.score >= 80 ? "good" : "bad";
+        return `
+            <div class="store-status">
+                <strong>${store.code}</strong>
+                <small>${escapeHTML(store.name)}</small>
+                <div class="${statusClass}" style="margin-top:8px;">
+                    ${record.score}% - ${record.status}
+                </div>
+                <small>${formatDate(record.date)}</small>
+            </div>
+        `;
+    }).join("");
+}
+
+
+/* =========================================================
+   YEARS
+========================================================= */
+
+function populateYears() {
+
+    const select =
+        document.getElementById(
+            "yearSelect"
+        );
+
+    const current =
+        new Date().getFullYear();
+
+    for (
+        let year = current - 3;
+        year <= current + 2;
+        year++
+    ) {
+
+        const option =
+            document.createElement("option");
+
+        option.value = year;
+
+        option.textContent = year;
+
+        if (year === current) {
+            option.selected = true;
+        }
+
+        select.appendChild(option);
+    }
+
+}
+
+
+/* =========================================================
+   MONTHLY SUMMARY
+========================================================= */
+
+function renderMonthly() {
+
+    const records = getRecords();
+
+    const year =
+        parseInt(
+            document.getElementById(
+                "yearSelect"
+            ).value
+        );
+
+    const table =
+        document.getElementById(
+            "monthlyTable"
+        );
+
+    table.innerHTML = "";
+
+    let grandWalks = 0;
+    let grandIssues = 0;
+    let grandPass = 0;
+    let grandFail = 0;
+    let totalScore = 0;
+
+
+    months.forEach(
+        (month, index) => {
+
+            const monthRecords =
+                records.filter(record => {
+
+                    const d =
+                        new Date(record.date);
+
+                    return (
+                        d.getFullYear() === year &&
+                        d.getMonth() === index
+                    );
+
+                });
+
+
+            const walks =
+                monthRecords.length;
+
+            const issues =
+                monthRecords.reduce(
+                    (sum,r) => sum + r.issues,
+                    0
+                );
+
+            const avg =
+                walks
+                    ? Math.round(
+                        monthRecords.reduce(
+                            (sum,r) =>
+                                sum + r.score,
+                            0
+                        ) / walks
+                    )
+                    : 0;
+
+            const pass =
+                monthRecords.filter(
+                    r => r.score >= 80
+                ).length;
+
+            const fail =
+                walks - pass;
+
+
+            grandWalks += walks;
+
+            grandIssues += issues;
+
+            grandPass += pass;
+
+            grandFail += fail;
+
+            totalScore +=
+                monthRecords.reduce(
+                    (sum,r) =>
+                        sum + r.score,
+                    0
+                );
+
+
+            const tr =
+                document.createElement("tr");
+
+            tr.innerHTML = `
+
+                <td>${month}</td>
+
+                <td>${walks}</td>
+
+                <td>
+                    <strong>${avg}%</strong>
+                </td>
+
+                <td>${issues}</td>
+
+                <td class="good">${pass}</td>
+
+                <td class="bad">${fail}</td>
+
+            `;
+
+            table.appendChild(tr);
+
+        }
+    );
+
+
+    const grandAvg =
+        grandWalks
+            ? Math.round(
+                totalScore / grandWalks
+            )
+            : 0;
+
+
+    document.getElementById(
+        "grandWalks"
+    ).textContent = grandWalks;
+
+    document.getElementById(
+        "grandScore"
+    ).textContent = grandAvg + "%";
+
+    document.getElementById(
+        "grandIssues"
+    ).textContent = grandIssues;
+
+    document.getElementById(
+        "grandPass"
+    ).textContent = grandPass;
+
+    document.getElementById(
+        "grandFail"
+    ).textContent = grandFail;
+
+}
+
+
+/* =========================================================
+   HISTORY
+========================================================= */
+
+function renderHistory() {
+
+    const records =
+        getRecords()
+            .sort(
+                (a,b) => b.id - a.id
+            );
+
+    const table =
+        document.getElementById(
+            "historyTable"
+        );
+
+    table.innerHTML = "";
+
+
+    if (!records.length) {
+
+        table.innerHTML = `
+
+            <tr>
+
+                <td colspan="8"
+                    style="
+                    text-align:center;
+                    padding:25px">
+
+                    No floor walk records available.
+
+                </td>
+
+            </tr>
+        `;
+
+        return;
+    }
+
+
+    records.forEach(record => {
+
+        const imageCount =
+            (record.images || []).filter(
+                image =>
+                    image.before ||
+                    image.after
+            ).length;
+
+
+        const tr =
+            document.createElement("tr");
+
+
+        tr.innerHTML = `
+
+            <td>${formatDate(record.date)}</td>
+
+            <td>${escapeHTML(record.store)}</td>
+
+            <td>${escapeHTML(record.vm || "-")}</td>
+
+            <td>
+                <strong>${record.score}%</strong>
+            </td>
+
+            <td>${record.issues}</td>
+
+            <td>📷 ${imageCount}</td>
+
+            <td class="${
+                record.score >= 80
+                ? "good"
+                : "bad"
+            }">
+
+                <strong>
+                    ${record.status}
+                </strong>
+
+            </td>
+
+            <td>
+
+                <button
+                    class="danger"
+                    onclick="deleteRecord(${record.id})">
+
+                    Delete
+
+                </button>
+
+            </td>
+
+        `;
+
+        table.appendChild(tr);
+
+    });
+
+}
+
+
+/* =========================================================
+   DELETE RECORD
+========================================================= */
+
+function deleteRecord(id) {
+
+    if (
+        !confirm(
+            "Delete this floor walk record?"
+        )
+    ) {
+        return;
+    }
+
+    let records = getRecords();
+
+    records =
+        records.filter(
+            record => record.id !== id
+        );
+
+    localStorage.setItem(
+        "vmFloorWalkRecords",
+        JSON.stringify(records)
+    );
+
+    renderDashboard();
+    renderMonthly();
+    renderHistory();
+
+}
+
+
+function deleteAll() {
+
+    if (
+        !confirm(
+            "Delete ALL floor walk records? " +
+            "This cannot be undone."
+        )
+    ) {
+        return;
+    }
+
+    localStorage.removeItem(
+        "vmFloorWalkRecords"
+    );
+
+    renderDashboard();
+    renderMonthly();
+    renderHistory();
+
+}
+
+
+/* =========================================================
+   RESET FORM
+========================================================= */
+
+function resetForm() {
+
+    if (
+        !confirm(
+            "Start a new floor walk?"
+        )
+    ) {
+        return;
+    }
+
+
+    document
+        .querySelectorAll(
+            "#walkPage input, #walkPage textarea"
+        )
+        .forEach(element => {
+
+            if (
+                element.type === "checkbox"
+            ) {
+
+                element.checked = false;
+
+            } else if (
+                element.type !== "date" &&
+                element.type !== "time" &&
+                element.type !== "file"
+            ) {
+
+                element.value = "";
+
+            } else if (
+                element.type === "file"
+            ) {
+
+                element.value = "";
+
+            }
+
+        });
+
+
+    const today = new Date();
+
+    document.getElementById(
+        "walkDate"
+    ).value =
+        today.toISOString()
+        .split("T")[0];
+
+    document.getElementById(
+        "walkTime"
+    ).value =
+        today.toTimeString()
+        .slice(0,5);
+
+
+    /*
+       Clear existing image pairs.
+    */
+
+    document.getElementById(
+        "imagePairs"
+    ).innerHTML = "";
+
+    document.getElementById("storeSelect").selectedIndex = 0;
+    updateSelectedStore();
+
+    imagePairCounter = 0;
+
+    addImagePair();
+
+    calculateScore();
+
+}
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function formatDate(dateString) {
+
+    if (!dateString) {
+        return "-";
+    }
+
+    const date =
+        new Date(dateString);
+
+    return date.toLocaleDateString(
+        "en-IN",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+function escapeHTML(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+</script>
+
+</body>
+</html>
