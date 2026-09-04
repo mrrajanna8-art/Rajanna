@@ -1994,10 +1994,42 @@ function saveWalk() {
         " Before/After image pair(s)."
     );
 
+    resetForm();
     renderDashboard();
     renderMonthly();
     renderHistory();
 
+}
+
+function resetForm() {
+    const today = new Date();
+    const storeCode = document.getElementById("storeSelect").value;
+
+    document.getElementById("walkDate").value =
+        today.toISOString().split("T")[0];
+    document.getElementById("walkTime").value =
+        today.toTimeString().slice(0, 5);
+    document.getElementById("vmName").value = "";
+    document.getElementById("replenishment").value = "";
+    document.getElementById("keyIssues").value = "";
+    document.getElementById("corrections").value = "";
+    document.getElementById("remarks").value = "";
+
+    document.querySelectorAll("#checklistTable .ok, #checklistTable .issue")
+        .forEach(input => {
+            input.checked = false;
+        });
+    document.querySelectorAll("#checklistTable .remark")
+        .forEach(input => {
+            input.value = "";
+        });
+
+    document.getElementById("imagePairs").innerHTML = "";
+    imagePairCounter = 0;
+    addImagePair();
+    document.getElementById("storeSelect").value = storeCode;
+    updateSelectedStore();
+    calculateScore();
 }
 
 
