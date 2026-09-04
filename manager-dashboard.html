@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VM Manager Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, sans-serif; background: #f3f4f6; color: #1f2937; }
+header { background: #111827; color: white; padding: 24px 30px; }
+header h1 { margin: 0; }
+header p { margin: 6px 0 0; color: #d1d5db; }
+.container { max-width: 1450px; margin: auto; padding: 22px; }
+.card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.metric { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.metric-title { font-size: 13px; color: #6b7280; font-weight: bold; text-transform: uppercase; }
+.metric-value { font-size: 30px; font-weight: bold; margin-top: 8px; }
+.good { color: #15803d; } .warning { color: #d97706; } .bad { color: #dc2626; }
+button { border: 0; padding: 11px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 4px; }
+.primary { background: #111827; color: white; } .success { background: #15803d; color: white; }
+.secondary { background: #e5e7eb; }
+.review-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-top: 14px; }
+.review-images { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+.review-images img { width: 100%; height: 230px; object-fit: contain; background: #f3f4f6; border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #111827; color: white; padding: 11px; text-align: left; font-size: 13px; }
+td { border: 1px solid #e5e7eb; padding: 9px; font-size: 13px; }
+.empty { color: #9ca3af; padding: 15px 0; }
+.auth-page { display: none; max-width: 560px; margin: 25px auto; }
+.auth-page.active { display: block; }
+.auth-card { display: none; }
+.auth-card.active { display: block; }
+.auth-form { display: grid; gap: 12px; }
+.auth-form label { font-size: 13px; font-weight: bold; }
+.auth-form input, .auth-form select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+.auth-message { min-height: 20px; font-size: 13px; font-weight: bold; }
+.user-list { margin-top: 18px; }
+.user-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #e5e7eb; padding: 10px 0; }
+.post-login-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.post-login-nav button { margin: 0; }
+.dashboard-download { margin-left: auto !important; padding: 8px 10px; font-size: 18px; line-height: 1; }
+.dashboard-download span { font-size: 12px; vertical-align: 2px; margin-left: 4px; }
+.app-page { display: none; }
+.app-page.active { display: block; }
+.question-form { display: grid; gap: 12px; max-width: 760px; }
+.question-form label { font-size: 13px; font-weight: bold; }
+.question-form input, .question-form textarea, .question-form select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+.question-list { margin-top: 20px; }
+.question-item { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; margin-top: 10px; }
+.form-tabs { display: flex; gap: 6px; border-bottom: 1px solid #e5e7eb; margin-bottom: 18px; }
+.form-tabs button { margin: 0; border-radius: 6px 6px 0 0; }
+.form-tab { display: none; }
+.form-tab.active { display: block; }
+.forms-builder { max-width: 760px; margin: 0 auto; }
+.forms-builder-header { border-top: 8px solid #7c3aed; }
+.form-question-card { background: #fff; border: 1px solid #e5e7eb; border-left: 4px solid #7c3aed; border-radius: 8px; padding: 16px; margin-top: 14px; }
+.form-question-card input, .form-question-card textarea, .form-question-card select { margin-top: 8px; }
+.question-card-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.question-card-row select { width: 180px; margin-top: 0; }
+.required-label { font-size: 13px; color: #4b5563; }
+.required-toggle { display: inline-block; background: #e5e7eb; border-radius: 6px; padding: 11px 18px; cursor: pointer; font-weight: bold; margin: 4px; }
+.required-toggle input { width: auto !important; margin: 0 6px 0 0 !important; vertical-align: middle; }
+.builder-helper { color: #6b7280; font-size: 13px; margin-top: 10px; }
+.builder-options-list { display: grid; gap: 8px; margin-top: 10px; }
+.forms-toolbar { display: flex; justify-content: flex-end; gap: 8px; align-items: center; padding: 12px 0; color: #374151; }
+.forms-toolbar button { margin: 0; background: transparent; }
+.forms-toolbar .collect { background: #0f766e; color: white; border-radius: 22px; }
+.forms-toolbar .clear-form-icon { padding: 7px 10px; font-size: 20px; line-height: 1; color: #b91c1c; }
+.generated-link-row { display: flex; align-items: center; gap: 8px; }
+.generated-link-row label { white-space: nowrap; }
+.generated-link-row input { flex: 1; min-width: 0; }
+.generated-link-row button { margin: 0; white-space: nowrap; }
+.quick-start { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 22px; }
+.quick-start.question-picker { display: none; }
+.quick-start.question-picker.open { display: grid; }
+.quick-start button { margin: 0; text-align: left; padding: 18px; background: #f9fafb; border: 1px solid #0f9aa3; color: #111827; font-size: 15px; }
+.quick-start button strong { color: #007c83; font-size: 20px; margin-right: 10px; }
+body.new-form-mode .post-login-nav,
+body.new-form-mode #authPage,
+body.new-form-mode header { display: none !important; }
+body.new-form-mode #dashboard { display: block !important; max-width: 900px; }
+body.new-form-mode #questionPage { display: block; }
+body.new-form-mode #questionPage > .card { margin-top: 25px; }
+body.new-form-mode #questionPage > .card > h2 { display: none; }
+body.new-form-mode .form-tabs { display: none; }
+.shared-form { display: none; max-width: 700px; margin: 25px auto; }
+.shared-form.active { display: block; }
+.shared-form-page { background: #eef7f7; }
+.shared-form-page header { display: none; }
+.shared-form-page .shared-form { max-width: 760px; margin: 40px auto; }
+.shared-form-page .shared-form > .card { border-top: 8px solid #0f766e; padding: 30px; }
+.shared-form-page #sharedQuestion { font-size: 30px; margin-top: 0; color: #374151; }
+.dashboard-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 18px; }
+.dashboard-tools label { display: grid; gap: 5px; font-size: 13px; font-weight: bold; }
+.dashboard-tools input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; }
+@media (max-width: 900px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .dashboard-grid, .review-images { grid-template-columns: 1fr; } .container { padding: 12px; } }
+</style>
+</head>
+<body>
+<header>
+    <h1>VM MANAGER DASHBOARD</h1>
+    <p>Store-wise performance, issue tracking and before / after image review</p>
+</header>
+<section id="sharedForm" class="shared-form">
+    <div class="card">
+        <h2 id="sharedQuestion"></h2>
+        <form id="sharedFormContent" class="question-form"></form>
+        <div id="sharedMessage" class="auth-message"></div>
+    </div>
+</section>
+<main class="container" id="dashboard" style="display:none;">
+    <div class="post-login-nav">
+        <button class="primary" onclick="showAppPage('managerPage')">Dashboard</button>
+        <button class="secondary" onclick="showAppPage('questionPage')">Form</button>
+        <button class="success" onclick="showAppPage('reportsPage')">Reports</button>
+        <button class="secondary dashboard-download" title="Download dashboard summary" aria-label="Download dashboard summary" onclick="downloadDashboardSummary()">&#x2B07;<span>Download</span></button>
+    </div>
+    <section id="managerPage" class="app-page active">
+      <div class="dashboard-tools">
+        <label for="dashboardDate">Date
+          <input id="dashboardDate" type="date" onchange="refreshDashboard()">
+        </label>
+        <button class="secondary" onclick="clearDashboardDate()">All Dates</button>
+      </div>
+      <section id="summary" class="dashboard-grid"></section>
+      <div id="daySummaryCard" class="card" style="display:none;">
+        <h2>Day-wise Summary</h2>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Date</th><th>Floor Walks</th><th>Average Score</th><th>Issues</th><th>Pass</th><th>Needs Improvement</th><th>Stores With Images</th></tr></thead>
+          <tbody id="daySummary"></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <h2>Store Performance</h2>
+        <div style="overflow-x:auto"><table>
+            <thead><tr><th>Code</th><th>Store</th><th>Last Walk</th><th>Score</th><th>Issues</th><th>Status</th><th>Images</th></tr></thead>
+            <tbody id="performanceTable"></tbody>
+        </table></div>
+    </div>
+    <div class="card">
+        <h2>Before / After Image Review</h2>
+        <div id="imageReview"></div>
+    </div>
+    <div class="card">
+      <h2>Summary</h2>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Month</th><th>Floor Walks</th><th>Average Score</th><th>Issues</th><th>Pass</th><th>Needs Improvement</th></tr></thead>
+        <tbody id="monthlySummary"></tbody>
+      </table></div>
+    </div>
+    </section>
+    <section id="questionPage" class="app-page">
+    <div class="card">
+      <h2>Forms</h2>
+      <div class="form-tabs">
+        <button id="newFormTab" class="secondary" onclick="openNewFormPage()">New Form</button>
+        <button id="recentTab" class="secondary" onclick="showFormTab('recentSection')">Recent</button>
+        <button id="myFormsTab" class="secondary" onclick="showFormTab('myFormsSection')">My Forms</button>
+      </div>
+      <div id="newFormSection" class="form-tab">
+        <div class="forms-toolbar">
+          <button type="button" onclick="alert('Style options will be available soon.')">Palette Style</button>
+          <button type="button" onclick="alert('Form settings will be available soon.')">Settings</button>
+          <button type="button" onclick="alert('Preview will be available after creating the form.')">Preview</button>
+          <button type="button" class="collect">➤ Collect responses</button>
+          <button type="button" onclick="alert('Responses will appear after submissions.')">▥ View responses</button>
+          <button type="button" onclick="window.print()">Present</button>
+          <button type="button" class="clear-form-icon" title="Clear all form content" aria-label="Clear all form content" onclick="clearNewForm()">&#x21BA;</button>
+        </div>
+        <form id="questionForm" class="question-form forms-builder">
+          <div class="card forms-builder-header">
+            <input id="formTitle" placeholder="Untitled form" required style="font-size:24px;border:0;border-bottom:1px solid #d1d5db;border-radius:0;">
+            <textarea id="formDescription" rows="2" placeholder="Form description (optional)" style="border:0;border-bottom:1px solid #d1d5db;border-radius:0;"></textarea>
+          </div>
+          <div id="builderQuestions"></div>
+          <button class="secondary" type="button" onclick="toggleQuestionPicker()">+ Add question</button>
+          <div id="questionPicker" class="quick-start question-picker">
+            <button type="button" onclick="chooseQuestionType('single')"><strong>◉</strong>Choice</button>
+            <button type="button" onclick="chooseQuestionType('text')"><strong>▣</strong>Text</button>
+            <button type="button" onclick="chooseQuestionType('rating')"><strong>♡</strong>Rating</button>
+            <button type="button" onclick="chooseQuestionType('date')"><strong>▦</strong>Date</button>
+            <button type="button" onclick="chooseQuestionType('ranking')"><strong>↕</strong>Ranking</button>
+            <button type="button" onclick="chooseQuestionType('likert')"><strong>☷</strong>Likert</button>
+            <button type="button" onclick="chooseQuestionType('file')"><strong>↥</strong>Upload File</button>
+            <button type="button" onclick="chooseQuestionType('section')"><strong>▣</strong>Section</button>
+          </div>
+          <button class="success" type="submit">Create Form & Generate Link</button>
+        </form>
+        <div id="questionMessage" class="auth-message"></div>
+        <div id="generatedLink" class="generated-link-row" style="display:none;margin-top:14px;">
+          <label for="formLink">Generated Form Link</label>
+          <input id="formLink" readonly>
+          <button class="primary" type="button" onclick="copyFormLink()">Copy Link</button>
+        </div>
+      </div>
+      <div id="recentSection" class="form-tab">
+        <div id="recentList" class="question-list"></div>
+      </div>
+      <div id="myFormsSection" class="form-tab">
+        <div id="questionList" class="question-list"></div>
+      </div>
+    </div>
+    </section>
+    <section id="reportsPage" class="app-page">
+      <div class="card">
+        <h2>Reports</h2>
+        <label for="reportDate" style="font-weight:bold;font-size:13px;">Report Date</label>
+        <input id="reportDate" type="date" style="display:block;margin:8px 0 14px;padding:10px;border:1px solid #d1d5db;border-radius:6px;">
+        <button class="success" onclick="exportManagerPPT()">Images Review PPT</button>
+        <button class="primary" onclick="exportExcelDashboard()">Excel Dashboard</button>
+      </div>
+    </section>
+</main>
+<section id="authPage" class="auth-page active">
+    <div class="card" style="text-align:center;">
+        <h2>Welcome to VM Manager Dashboard</h2>
+        <p style="color:#6b7280;">Login to continue, or create a new Login ID.</p>
+        <button class="primary" onclick="showLoginCard()">Login</button>
+        <button class="success" onclick="showCreateUserCard()">New User</button>
+    </div>
+    <div id="loginCard" class="card auth-card active">
+        <h2>User Login</h2>
+        <form id="loginForm" class="auth-form">
+            <label for="loginId">Login ID</label>
+            <input id="loginId" autocomplete="username" required>
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" autocomplete="current-password" required>
+            <button class="primary" type="submit">Login</button>
+        </form>
+        <div id="loginMessage" class="auth-message"></div>
+    </div>
+    <div id="userCard" class="card auth-card">
+        <h2>Create Login ID</h2>
+        <form id="userForm" class="auth-form">
+            <label for="newLoginId">New Login ID</label>
+            <input id="newLoginId" autocomplete="username" minlength="3" required>
+            <label for="newRole">Role</label>
+            <select id="newRole">
+                <option>ZVM</option>
+                <option>TVM</option>
+                <option>RVM</option>
+                <option>CVM</option>
+            </select>
+            <label for="newPassword">Password</label>
+            <input id="newPassword" type="password" autocomplete="new-password" minlength="6" required>
+            <label for="confirmPassword">Confirm Password</label>
+            <input id="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
+            <button class="success" type="submit">Create New User</button>
+        </form>
+        <div id="userMessage" class="auth-message"></div>
+        <button class="secondary" onclick="showLoginCard()">Back to Login</button>
+    </div>
+</section>
+<script>
+const stores = [
+    ["P053", "PT-INORBIT MALL MADHAPUR-HYDERABAD"],
+    ["P096", "PT-FORUM SUJANA MALL-HYDERABAD"],
+    ["P202", "PT-SARATH CITY MALL-HYDERABAD"],
+    ["P215", "PT-L&T PANJAGUTTA-HYDERABAD"],
+    ["P376", "PT-MUKURAMPURA-KARIMNAGAR"],
+    ["P379", "PT-HANAMKONDA-WARANGAL"],
+    ["P460", "PT-KOMPALLY-HYDERABAD"],
+    ["P497", "PT-ASHOKA GOLDEN MALL-HYDERABAD"],
+    ["P670", "PT-BANDLAGUDA-HYDERABAD"],
+    ["P704", "PT-RC PURAM-HYDERABAD"],
+    ["P715", "PT-MADEENAGUDA-HYDERABAD"]
+];
+
+function records() {
+    try { return JSON.parse(localStorage.getItem("vmFloorWalkRecords") || "[]"); }
+    catch (error) { return []; }
+}
+
+function latestRecords() {
+    const latest = {};
+    records().forEach(record => {
+        const code = record.storeCode || stores.find(store => store[1] === record.store)?.[0];
+        if (code && (!latest[code] || record.id > latest[code].id)) latest[code] = record;
+    });
+    return latest;
+}
+
+function formatDate(value) {
+    if (!value) return "-";
+    return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function escapeHTML(value) {
+    return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function refreshDashboard() {
+    const selectedDate = document.getElementById("dashboardDate")?.value;
+    const allRecords = records().filter(record => !selectedDate || record.date === selectedDate);
+    const latest = {};
+    allRecords.forEach(record => {
+        const code = record.storeCode || stores.find(store => store[1] === record.store)?.[0];
+        if (code && (!latest[code] || record.id > latest[code].id)) latest[code] = record;
+    });
+    const checked = stores.filter(store => latest[store[0]]).length;
+    const withImages = stores.filter(store => latest[store[0]] &&
+        (latest[store[0]].images || []).some(image => image.before || image.after)).length;
+    const avg = checked ? Math.round(stores.reduce((sum, store) =>
+        sum + (latest[store[0]]?.score || 0), 0) / checked) : 0;
+    const issues = allRecords.reduce((sum, record) => sum + (record.issues || 0), 0);
+    document.getElementById("summary").innerHTML = `
+        <div class="metric"><div class="metric-title">Stores Checked</div><div class="metric-value">${checked}/${stores.length}</div></div>
+        <div class="metric"><div class="metric-title">Average Score</div><div class="metric-value good">${avg}%</div></div>
+        <div class="metric"><div class="metric-title">Total Issues</div><div class="metric-value bad">${issues}</div></div>
+        <div class="metric"><div class="metric-title">Stores With Images</div><div class="metric-value">${withImages}</div></div>`;
+    renderDaySummary(selectedDate, allRecords);
+    document.getElementById("performanceTable").innerHTML = allRecords.length ? stores.map(store => {
+        const record = latest[store[0]];
+        const images = record ? (record.images || []).filter(image => image.before || image.after).length : 0;
+        return `<tr><td><strong>${store[0]}</strong></td><td>${escapeHTML(store[1])}</td>
+            <td>${record ? formatDate(record.date) : "-"}</td><td>${record ? record.score + "%" : "-"}</td>
+            <td>${record ? record.issues : "-"}</td><td class="${record?.score >= 80 ? "good" : record ? "bad" : "warning"}">
+            ${record ? record.status : "NOT CHECKED"}</td><td>${images}</td></tr>`;
+    }).join("") : `<tr><td colspan="7" class="empty">No submitted floor-walk data yet.</td></tr>`;
+    document.getElementById("imageReview").innerHTML = allRecords.length ? stores.map(store => {
+        const record = latest[store[0]];
+        const images = record ? (record.images || []).filter(image => image.before || image.after) : [];
+        const content = images.length ? images.map((image, index) => `<div class="review-images">
+            ${image.before ? `<div><strong>Before ${index + 1}</strong><img src="${image.before}" alt="Before image"></div>` : ""}
+            ${image.after ? `<div><strong>After ${index + 1}</strong><img src="${image.after}" alt="After image"></div>` : ""}
+        </div>`).join("") : `<div class="empty">No before/after images saved.</div>`;
+        return `<div class="review-card"><strong>${store[0]} - ${escapeHTML(store[1])}</strong>
+            <div style="margin-top:5px;color:#6b7280">${record ? formatDate(record.date) + " | Score " + record.score + "% | " + record.status : "No floor walk recorded"}</div>${content}</div>`;
+    }).join("") : "";
+    renderMonthlySummary(allRecords);
+}
+
+function clearDashboardDate() {
+    document.getElementById("dashboardDate").value = "";
+    refreshDashboard();
+}
+
+function renderDaySummary(selectedDate, allRecords) {
+    const card = document.getElementById("daySummaryCard");
+    if (!selectedDate) {
+        card.style.display = "none";
+        return;
+    }
+    const walks = allRecords.length;
+    const score = walks ? Math.round(allRecords.reduce((sum, record) => sum + (record.score || 0), 0) / walks) : 0;
+    const issues = allRecords.reduce((sum, record) => sum + (record.issues || 0), 0);
+    const pass = allRecords.filter(record => record.score >= 80).length;
+    const imageStores = allRecords.filter(record =>
+        (record.images || []).some(image => image.before || image.after)).length;
+    document.getElementById("daySummary").innerHTML = `<tr>
+        <td>${formatDate(selectedDate)}</td><td>${walks}</td><td>${score}%</td><td>${issues}</td>
+        <td class="good">${pass}</td><td class="bad">${walks - pass}</td><td>${imageStores}</td>
+    </tr>`;
+    if (!walks) {
+        document.getElementById("daySummary").innerHTML = '<tr><td colspan="7" class="empty">No floor walks found for this date.</td></tr>';
+    }
+    card.style.display = "block";
+}
+
+function downloadDashboardSummary() {
+    const dashboardDate = document.getElementById("dashboardDate").value;
+    document.getElementById("reportDate").value = dashboardDate;
+    exportExcelDashboard();
+}
+
+function renderMonthlySummary(allRecords) {
+    const months = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+    document.getElementById("monthlySummary").innerHTML = months.map((month, index) => {
+        const monthRecords = allRecords.filter(record => new Date(record.date).getMonth() === index);
+        const walks = monthRecords.length;
+        const score = walks ? Math.round(monthRecords.reduce((sum, record) => sum + (record.score || 0), 0) / walks) : 0;
+        const issues = monthRecords.reduce((sum, record) => sum + (record.issues || 0), 0);
+        const pass = monthRecords.filter(record => record.score >= 80).length;
+        return `<tr><td>${month}</td><td>${walks}</td><td>${score}%</td><td>${issues}</td><td class="good">${pass}</td><td class="bad">${walks - pass}</td></tr>`;
+    }).join("");
+}
+
+function getUsers() {
+    try { return JSON.parse(localStorage.getItem("vmDashboardUsers") || "[]"); }
+    catch (error) { return []; }
+}
+
+function ensureDefaultUser() {
+    const users = getUsers();
+    if (users.some(user => user.loginId.toLowerCase() === "cvm 272658")) return;
+    users.push({
+        loginId: "cvm 272658",
+        name: "CVM 272658",
+        role: "Manager",
+        access: "Full dashboard access",
+        passwordHash: "0248f087c52467c854cc8379e732086658b6f8cc0b64e4786befa252f6a49170"
+    });
+    localStorage.setItem("vmDashboardUsers", JSON.stringify(users));
+}
+
+async function hashPassword(password) {
+    if (!window.crypto?.subtle) throw new Error("Secure password hashing is unavailable in this browser.");
+    const data = new TextEncoder().encode(password);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+}
+
+function showAuthPage() {
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("authPage").classList.add("active");
+    renderUsers();
+}
+
+function hideAuthPage() {
+    document.getElementById("dashboard").style.display = "block";
+    document.getElementById("authPage").classList.remove("active");
+}
+
+function showLoginCard() {
+    document.getElementById("loginCard").classList.add("active");
+    document.getElementById("userCard").classList.remove("active");
+}
+
+function showCreateUserCard() {
+    document.getElementById("userCard").classList.add("active");
+    document.getElementById("loginCard").classList.remove("active");
+}
+
+function showAppPage(pageId) {
+    document.querySelectorAll(".app-page").forEach(page => page.classList.remove("active"));
+    document.getElementById(pageId).classList.add("active");
+    if (pageId === "reportsPage" && !document.getElementById("reportDate").value) {
+        document.getElementById("reportDate").value = new Date().toISOString().split("T")[0];
+    }
+    if (pageId === "questionPage") renderQuestions();
+}
+
+function showFormTab(tabId) {
+    document.querySelectorAll(".form-tab").forEach(tab => tab.classList.remove("active"));
+    document.querySelectorAll(".form-tabs button").forEach(button => {
+        button.classList.remove("primary");
+        button.classList.add("secondary");
+    });
+    document.getElementById(tabId).classList.add("active");
+    const tabButton = document.querySelector(`[onclick="showFormTab('${tabId}')"]`);
+    tabButton.classList.remove("secondary");
+    tabButton.classList.add("primary");
+    if (tabId === "newFormSection") {
+        document.getElementById("questionForm").reset();
+        document.getElementById("questionMessage").textContent = "";
+        document.getElementById("generatedLink").style.display = "none";
+    }
+
+    if (tabId === "recentSection" || tabId === "myFormsSection") renderQuestions();
+}
+
+function openNewFormPage() {
+    const url = `${window.location.href.split("?")[0].split("#")[0]}?new-form=1`;
+    window.open(url, "_blank");
+}
+
+function loadNewFormPage() {
+    if (!new URLSearchParams(window.location.search).has("new-form")) return false;
+    document.body.classList.add("new-form-mode");
+    document.getElementById("authPage").classList.remove("active");
+    document.getElementById("dashboard").style.display = "block";
+    document.querySelectorAll(".app-page").forEach(page => page.classList.remove("active"));
+    document.getElementById("questionPage").classList.add("active");
+    document.querySelectorAll(".form-tab").forEach(tab => tab.classList.remove("active"));
+    document.getElementById("newFormSection").classList.add("active");
+    document.getElementById("questionForm").reset();
+    document.getElementById("builderQuestions").innerHTML = "";
+    return true;
+}
+
+function getReportRecords() {
+    const date = document.getElementById("reportDate").value;
+    return records().filter(record => !date || record.date === date);
+}
+
+function getReportLatestRecords() {
+    const latest = {};
+    getReportRecords().forEach(record => {
+        const code = record.storeCode || stores.find(store => store[1] === record.store)?.[0];
+        if (code && (!latest[code] || record.id > latest[code].id)) latest[code] = record;
+    });
+    return latest;
+}
+
+function createFormLink(question) {
+    const payload = encodeURIComponent(JSON.stringify(question));
+    const publicFormUrl = "https://mrrajanna8-art.github.io/Rajanna/manager-dashboard.html";
+    return `${publicFormUrl}#form=${payload}`;
+}
+
+function loadSharedForm() {
+    if (!window.location.hash.startsWith("#form=")) return;
+    try {
+        const question = JSON.parse(decodeURIComponent(window.location.hash.slice(6)));
+        document.body.classList.add("shared-form-page");
+        document.getElementById("authPage").classList.remove("active");
+        document.getElementById("dashboard").style.display = "none";
+        document.getElementById("sharedForm").classList.add("active");
+        document.getElementById("sharedQuestion").textContent = question.title || question.text;
+        const form = document.getElementById("sharedFormContent");
+        const questions = question.questions || [question];
+        form.innerHTML = `${question.description ? `<p style="color:#6b7280">${escapeHTML(question.description)}</p>` : ""}
+            ${questions.map((item, index) => item.type === "section"
+                ? `<div class="form-question-card"><h3>${escapeHTML(item.text)}</h3><p class="builder-helper">Section</p></div>`
+                : `<div class="form-question-card"><strong>${index + 1}. ${escapeHTML(item.text)}${item.required ? " *" : ""}</strong>
+                  <div class="shared-answer">${sharedAnswerControl(item, index)}</div></div>`).join("")}`;
+        form.insertAdjacentHTML("beforeend", '<button class="success" type="submit">Submit Response</button>');
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            const missing = questions.some((item, index) => item.required && !getSharedAnswer(form, item, index));
+            if (missing) {
+                document.getElementById("sharedMessage").textContent = "Please answer all required questions.";
+                document.getElementById("sharedMessage").className = "auth-message bad";
+                return;
+            }
+            document.getElementById("sharedMessage").textContent = "Response submitted successfully.";
+            document.getElementById("sharedMessage").className = "auth-message good";
+        });
+    } catch (error) {
+        document.getElementById("sharedForm").classList.add("active");
+        document.getElementById("sharedQuestion").textContent = "This form link is invalid.";
+    }
+}
+
+function sharedAnswerControl(item, index) {
+    const name = `sharedAnswer${index}`;
+    if (item.type === "text") return `<textarea name="${name}" rows="3" placeholder="Enter your answer"></textarea>`;
+    if (item.type === "date") return `<input name="${name}" type="date">`;
+    if (item.type === "rating") return `<div>${[1, 2, 3, 4, 5].map(value => `<label><input type="radio" name="${name}" value="${value}"> ${value} star</label>`).join("")}</div>`;
+    if (item.type === "file") return `<input name="${name}" type="file" multiple>`;
+    if (item.type === "ranking") return `<textarea name="${name}" rows="3" placeholder="Enter ranked items, one per line"></textarea>`;
+    if (item.type === "likert") return `<textarea name="${name}" rows="3" placeholder="Enter your response"></textarea>`;
+    return item.options.map(option => `<label><input type="${item.type === "multiple" ? "checkbox" : "radio"}" name="${name}" value="${escapeHTML(option)}"> ${escapeHTML(option)}</label>`).join("");
+}
+
+function getSharedAnswer(form, item, index) {
+    if (item.type === "section") return true;
+    const controls = Array.from(form.querySelectorAll(`[name="sharedAnswer${index}"]`));
+    if (item.type === "file") return controls[0]?.files.length > 0;
+    if (["single", "multiple", "rating"].includes(item.type)) return controls.some(control => control.checked);
+    return Boolean(controls[0]?.value.trim());
+}
+
+function showGeneratedLink(question) {
+    const link = createFormLink(question);
+    document.getElementById("formLink").value = link;
+    document.getElementById("generatedLink").style.display = "block";
+}
+
+async function copyFormLink() {
+    const link = document.getElementById("formLink").value;
+    await navigator.clipboard.writeText(link);
+    document.getElementById("questionMessage").textContent = "Form link copied.";
+    document.getElementById("questionMessage").className = "auth-message good";
+}
+
+function openFormLink() {
+    window.open(document.getElementById("formLink").value, "_blank");
+}
+
+function getQuestions() {
+    try { return JSON.parse(localStorage.getItem("vmDashboardQuestions") || "[]"); }
+    catch (error) { return []; }
+}
+
+function addBuilderQuestion(selectedType = "single") {
+    const type = selectedType;
+    document.getElementById("builderQuestions").insertAdjacentHTML("beforeend", `
+      <div class="form-question-card">
+        <div class="question-card-row">
+          <input class="builder-text" placeholder="${type === "section" ? "Section title" : "Question"}" required>
+          <select class="builder-type" onchange="toggleBuilderOptions(this)">
+            <option value="single" ${type === "single" ? "selected" : ""}>Choice</option>
+            <option value="multiple" ${type === "multiple" ? "selected" : ""}>Multiple choice</option>
+            <option value="text" ${type === "text" ? "selected" : ""}>Text</option>
+            <option value="rating" ${type === "rating" ? "selected" : ""}>Rating</option>
+            <option value="date" ${type === "date" ? "selected" : ""}>Date</option>
+            <option value="ranking" ${type === "ranking" ? "selected" : ""}>Ranking</option>
+            <option value="likert" ${type === "likert" ? "selected" : ""}>Likert</option>
+            <option value="file" ${type === "file" ? "selected" : ""}>Upload File</option>
+            <option value="section" ${type === "section" ? "selected" : ""}>Section</option>
+          </select>
+        </div>
+        <div class="builder-controls">${builderControls(type)}</div>
+        <label class="required-toggle builder-required-wrap" ${type === "section" ? 'style="display:none"' : ""}><input class="builder-required" type="checkbox">Required</label>
+        <button class="secondary" type="button" onclick="copyBuilderQuestion(this)">Copy</button>
+        <button class="secondary" type="button" onclick="this.closest('.form-question-card').remove()">Remove</button>
+      </div>`);
+}
+
+function builderControls(type) {
+    if (type === "single" || type === "multiple") {
+        return `<div class="builder-options-list">
+          <input class="builder-option" placeholder="Option 1" required>
+          <input class="builder-option" placeholder="Option 2" required>
+          <button class="secondary" type="button" onclick="addBuilderOption(this)">+ Add option</button>
+          <button class="secondary" type="button" onclick="addOtherOption(this)">Add "Other" option</button>
+        </div>`;
+    }
+    if (type === "text") return '<input class="builder-answer-preview" placeholder="Enter your answer" disabled>';
+    if (type === "rating") return '<div class="builder-helper">☆ ☆ ☆ ☆ ☆ &nbsp; Rating scale</div>';
+    if (type === "date") return '<input type="date" disabled>';
+    if (type === "ranking") return '<textarea rows="3" placeholder="Enter items to rank, one per line"></textarea>';
+    if (type === "likert") return '<textarea rows="3" placeholder="Enter statements, one per line"></textarea><div class="builder-helper">Likert scale: Strongly disagree to Strongly agree</div>';
+    if (type === "file") return '<input type="file" disabled><div class="builder-helper">File number limit: <input class="file-limit" type="number" min="1" value="1"> &nbsp; Size limit: <input class="file-size-limit" type="number" min="1" value="10"> MB</div>';
+    return '<textarea rows="2" placeholder="Section description (optional)"></textarea>';
+}
+
+function addBuilderOption(button) {
+    const list = button.closest(".builder-options-list");
+    const option = document.createElement("input");
+    option.className = "builder-option";
+    option.placeholder = `Option ${list.querySelectorAll(".builder-option").length + 1}`;
+    option.required = true;
+    list.insertBefore(option, button);
+}
+
+function addOtherOption(button) {
+    const list = button.closest(".builder-options-list");
+    if (!list.querySelector('[data-other-option]')) {
+        const option = document.createElement("input");
+        option.className = "builder-option";
+        option.value = "Other";
+        option.dataset.otherOption = "true";
+        list.insertBefore(option, button);
+    }
+
+}
+
+function copyBuilderQuestion(button) {
+    const source = button.closest(".form-question-card");
+    const copy = source.cloneNode(true);
+    source.after(copy);
+}
+
+function toggleQuestionPicker() {
+    document.getElementById("questionPicker").classList.toggle("open");
+}
+
+function chooseQuestionType(type) {
+    addBuilderQuestion(type);
+    document.getElementById("questionPicker").classList.remove("open");
+}
+
+function toggleBuilderOptions(select) {
+    const card = select.closest(".form-question-card");
+    card.querySelector(".builder-controls").innerHTML = builderControls(select.value);
+    card.querySelector(".builder-required-wrap").style.display = select.value === "section" ? "none" : "block";
+}
+
+function clearNewForm() {
+    if (!confirm("Clear all form content?")) return;
+    document.getElementById("questionForm").reset();
+    document.getElementById("builderQuestions").innerHTML = "";
+    document.getElementById("questionMessage").textContent = "";
+    document.getElementById("generatedLink").style.display = "none";
+}
+
+function renderQuestions() {
+    const questions = getQuestions();
+    const questionMarkup = questions.length
+        ? questions.map((question, index) => `
+            <div class="question-item">
+                <strong>${index + 1}. ${escapeHTML(question.text)}</strong>
+                <div style="color:#6b7280;margin-top:5px;">Type: ${escapeHTML(question.type)}</div>
+                ${question.options.length ? `<div style="margin-top:5px;">Options: ${question.options.map(escapeHTML).join(", ")}</div>` : ""}
+            </div>
+        `).join("")
+        : `<div class="empty">No questions created yet.</div>`;
+    document.getElementById("questionList").innerHTML = questionMarkup;
+    document.getElementById("recentList").innerHTML = questions.length
+        ? questions.slice(-5).reverse().map((question, index) => `
+            <div class="question-item">
+              <strong>${escapeHTML(question.text)}</strong>
+              <div style="color:#6b7280;margin-top:5px;">Type: ${escapeHTML(question.type)}</div>
+            </div>
+        `).join("")
+        : `<div class="empty">No recent forms yet.</div>`;
+}
+
+document.getElementById("questionForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const questionCards = Array.from(document.querySelectorAll("#builderQuestions .form-question-card"));
+    const questions = questionCards.map(card => ({
+        text: card.querySelector(".builder-text").value.trim(),
+        type: card.querySelector(".builder-type").value,
+        options: Array.from(card.querySelectorAll(".builder-option")).map(option => option.value.trim()).filter(Boolean),
+        required: card.querySelector(".builder-required").checked
+    }));
+    if (!questions.length || questions.some(question =>
+        (question.type === "single" || question.type === "multiple") && question.options.length < 2
+    )) {
+        document.getElementById("questionMessage").textContent = "Add at least two options for this question type.";
+        document.getElementById("questionMessage").className = "auth-message bad";
+        return;
+    }
+    const form = { title: document.getElementById("formTitle").value.trim(), description: document.getElementById("formDescription").value.trim(), questions, createdAt: Date.now() };
+    const forms = JSON.parse(localStorage.getItem("vmDashboardForms") || "[]");
+    forms.push(form);
+    localStorage.setItem("vmDashboardForms", JSON.stringify(forms));
+    document.getElementById("questionMessage").textContent = "Form created successfully.";
+    document.getElementById("questionMessage").className = "auth-message good";
+    showGeneratedLink(form);
+    renderQuestions();
+});
+
+document.getElementById("userForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const loginId = document.getElementById("newLoginId").value.trim();
+    const password = document.getElementById("newPassword").value;
+    const confirmation = document.getElementById("confirmPassword").value;
+    const message = document.getElementById("userMessage");
+    if (password !== confirmation) {
+        message.textContent = "Passwords do not match.";
+        message.className = "auth-message bad";
+        return;
+    }
+    const users = getUsers();
+    if (users.some(user => user.loginId.toLowerCase() === loginId.toLowerCase())) {
+        message.textContent = "That Login ID already exists.";
+        message.className = "auth-message bad";
+        return;
+    }
+    try {
+        users.push({ loginId, name: loginId, role: document.getElementById("newRole").value, access: "Dashboard access", passwordHash: await hashPassword(password) });
+        localStorage.setItem("vmDashboardUsers", JSON.stringify(users));
+        event.target.reset();
+        message.textContent = "User created successfully.";
+        message.className = "auth-message good";
+    } catch (error) {
+        message.textContent = error.message;
+        message.className = "auth-message bad";
+    }
+});
+
+document.getElementById("loginForm").addEventListener("submit", async event => {
+    event.preventDefault();
+    const message = document.getElementById("loginMessage");
+    try {
+        const loginId = document.getElementById("loginId").value.trim();
+        const passwordHash = await hashPassword(document.getElementById("loginPassword").value);
+        const user = getUsers().find(item =>
+            item.loginId.toLowerCase() === loginId.toLowerCase() && item.passwordHash === passwordHash
+        );
+            message.textContent = user ? `Login successful. Welcome, ${user.name}. Access: ${user.access || user.role}.` : "Invalid Login ID or password.";
+        message.className = `auth-message ${user ? "good" : "bad"}`;
+        if (user) hideAuthPage();
+    } catch (error) {
+        message.textContent = error.message;
+        message.className = "auth-message bad";
+    }
+});
+
+function exportExcelDashboard() {
+    if (typeof XLSX === "undefined") return alert("Excel export is unavailable. Check your internet connection.");
+    const latest = getReportLatestRecords();
+    const summary = stores.map(store => {
+        const record = latest[store[0]];
+        return { "Store Code": store[0], "Store Name": store[1], "Last Walk Date": record?.date || "",
+            "Score": record?.score ?? "", "Issues": record?.issues ?? "", "Status": record?.status || "NOT CHECKED",
+            "Image Pairs": record ? (record.images || []).filter(image => image.before || image.after).length : 0 };
+    });
+    const history = getReportRecords().map(record => ({ "Store Code": record.storeCode || "", "Store Name": record.store || "",
+        "Date": record.date, "VM": record.vm || "", "Score": record.score, "Issues": record.issues,
+        "Status": record.status, "Remarks": record.remarks || "" }));
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(summary), "Store Dashboard");
+    XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(history), "Walk History");
+    XLSX.writeFile(book, `VM-Manager-Dashboard-${document.getElementById("reportDate").value || "all-dates"}.xlsx`);
+}
+
+async function exportManagerPPT() {
+    if (typeof PptxGenJS === "undefined") return alert("PowerPoint export is unavailable. Check your internet connection.");
+    const filteredRecords = getReportRecords();
+    if (!filteredRecords.length) return alert("No floor walks found for the selected date.");
+    const latest = getReportLatestRecords();
+    const pptx = new PptxGenJS();
+    pptx.layout = "LAYOUT_WIDE";
+    const cover = pptx.addSlide();
+    cover.background = { color: "111827" };
+    cover.addText("MANAGER IMAGE REVIEW", { x: .7, y: 2.2, w: 12, h: .5, fontSize: 28, bold: true, color: "FFFFFF", align: "center" });
+    cover.addText("Store-wise Before & After Report", { x: .7, y: 2.9, w: 12, h: .35, fontSize: 18, color: "D1D5DB", align: "center" });
+    stores.forEach(store => {
+        const slide = pptx.addSlide();
+        const record = latest[store[0]];
+        slide.addText(`${store[0]} - ${store[1]}`, { x: .45, y: .3, w: 12.4, h: .4, fontSize: 18, bold: true });
+        if (!record) return slide.addText("No floor walk recorded.", { x: .7, y: 3, w: 12, h: .4, fontSize: 18, color: "D97706", align: "center" });
+        slide.addText(`Date: ${formatDate(record.date)}   Score: ${record.score}%   Issues: ${record.issues}   Status: ${record.status}`, { x: .55, y: .85, w: 12, h: .3, fontSize: 11 });
+        const image = (record.images || []).find(item => item.before || item.after);
+        if (image?.before) slide.addImage({ data: image.before, x: .65, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+        if (image?.after) slide.addImage({ data: image.after, x: 7.05, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+        if (!image) slide.addText("No before/after images saved.", { x: .7, y: 3, w: 12, h: .4, fontSize: 18, color: "D97706", align: "center" });
+        slide.addText("BEFORE", { x: .65, y: 5.8, w: 5.55, h: .25, bold: true, color: "991B1B", align: "center" });
+        slide.addText("AFTER", { x: 7.05, y: 5.8, w: 5.55, h: .25, bold: true, color: "15803D", align: "center" });
+    });
+    await pptx.writeFile({ fileName: `VM-Manager-Image-Review-${document.getElementById("reportDate").value || "all-dates"}.pptx` });
+}
+
+window.addEventListener("storage", refreshDashboard);
+ensureDefaultUser();
+refreshDashboard();
+loadSharedForm();
+loadNewFormPage();
+</script>
+</body>
+</html>
