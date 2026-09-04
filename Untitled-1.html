@@ -921,7 +921,7 @@ same area after correction.
 
 <button class="primary no-print"
         onclick="addImagePair()">
-    + Add Before / After
+    + Add Before / After (unlimited)
 </button>
 
 </div>
@@ -1756,8 +1756,9 @@ function updateImagePairControls() {
         return;
     }
 
+    const pairCount = document.querySelectorAll(".image-pair").length;
     addButton.disabled = false;
-    addButton.textContent = "+ Add Before / After";
+    addButton.textContent = `+ Add Before / After (${pairCount} pairs)`;
 }
 
 
