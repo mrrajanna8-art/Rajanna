@@ -921,7 +921,7 @@ same area after correction.
 
 <button class="primary no-print"
         onclick="addImagePair()">
-    + Add Before / After
+    + Add Before / After (up to 10 pairs)
 </button>
 
 </div>
@@ -967,7 +967,7 @@ placeholder="Enter remarks"></textarea>
 
 <button class="primary"
         onclick="saveWalk()">
-    Save Floor Walk
+    Submit Floor Walk
 </button>
 
 <button class="secondary"
@@ -1549,6 +1549,11 @@ function calculateScore() {
 ========================================================= */
 
 function addImagePair() {
+    const existingPairs = document.querySelectorAll(".image-pair").length;
+    if (existingPairs >= 10) {
+        alert("You can upload up to 10 Before images and 10 After images.");
+        return;
+    }
 
     imagePairCounter++;
 
@@ -1657,6 +1662,7 @@ function addImagePair() {
     `;
 
     container.appendChild(pair);
+    updateImagePairControls();
 }
 
 
@@ -1769,6 +1775,20 @@ function removeImagePair(id) {
         pair.remove();
     }
 
+    updateImagePairControls();
+}
+
+function updateImagePairControls() {
+    const addButton = document.querySelector(".image-section button[onclick='addImagePair()']");
+    if (!addButton) {
+        return;
+    }
+
+    const pairCount = document.querySelectorAll(".image-pair").length;
+    addButton.disabled = pairCount >= 10;
+    addButton.textContent = pairCount >= 10
+        ? "10 Before / 10 After images added"
+        : `+ Add Before / After (${pairCount}/10 pairs)`;
 }
 
 
@@ -1969,8 +1989,8 @@ function saveWalk() {
 
 
     alert(
-        "Floor Walk saved successfully with " +
-        record.images.length +
+        "Thank you. Floor Walk submitted successfully with " +
+        record.images.filter(image => image.before || image.after).length +
         " Before/After image pair(s)."
     );
 
@@ -2445,17 +2465,34 @@ async function exportStoreWisePPT() {
                 fontSize: 18, color: "D97706", align: "center"
             });
         } else {
-            const image = images[0];
-            if (image.before) {
-                slide.addText("BEFORE", { x: 0.55, y: 1.35, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "991B1B", align: "center" });
-                slide.addImage({ data: image.before, x: 0.65, y: 1.65, w: 5.55, h: 3.65, sizingContain: true });
-                if (image.beforeCaption) slide.addText(image.beforeCaption, { x: 0.65, y: 5.4, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
-            }
-            if (image.after) {
-                slide.addText("AFTER", { x: 6.95, y: 1.35, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "15803D", align: "center" });
-                slide.addImage({ data: image.after, x: 7.05, y: 1.65, w: 5.55, h: 3.65, sizingContain: true });
-                if (image.afterCaption) slide.addText(image.afterCaption, { x: 7.05, y: 5.4, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
-            }
+            images.forEach((image, index) => {
+                const imageSlide = index === 0 ? slide : pptx.addSlide();
+                imageSlide.background = { color: "F9FAFB" };
+                if (index > 0) {
+                    imageSlide.addText(`${store.code} - ${store.name}`, {
+                        x: 0.45, y: 0.3, w: 12.4, h: 0.45,
+                        fontSize: 18, bold: true, color: "111827"
+                    });
+                    imageSlide.addText(
+                        `Date: ${formatDate(record.date)}   VM: ${record.vm || "-"}   Score: ${record.score}%   Status: ${record.status}`,
+                        { x: 0.55, y: 0.85, w: 12, h: 0.3, fontSize: 11, color: "374151" }
+                    );
+                }
+                imageSlide.addText(`IMAGE PAIR ${index + 1} OF ${images.length}`, {
+                    x: 0.55, y: 1.15, w: 12, h: 0.25,
+                    fontSize: 11, bold: true, color: "6B7280", align: "center"
+                });
+                if (image.before) {
+                    imageSlide.addText("BEFORE", { x: 0.55, y: 1.45, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "991B1B", align: "center" });
+                    imageSlide.addImage({ data: image.before, x: 0.65, y: 1.75, w: 5.55, h: 3.65, sizingContain: true });
+                    if (image.beforeCaption) imageSlide.addText(image.beforeCaption, { x: 0.65, y: 5.5, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
+                }
+                if (image.after) {
+                    imageSlide.addText("AFTER", { x: 6.95, y: 1.45, w: 5.8, h: 0.25, bold: true, fontSize: 12, color: "15803D", align: "center" });
+                    imageSlide.addImage({ data: image.after, x: 7.05, y: 1.75, w: 5.55, h: 3.65, sizingContain: true });
+                    if (image.afterCaption) imageSlide.addText(image.afterCaption, { x: 7.05, y: 5.5, w: 5.55, h: 0.35, fontSize: 10, color: "4B5563", align: "center" });
+                }
+            });
         }
 
         const notes = [record.keyIssues, record.corrections, record.remarks].filter(Boolean).join(" | ");
