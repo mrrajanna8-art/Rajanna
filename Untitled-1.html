@@ -528,11 +528,6 @@ button {
     </button>
 
     <button class="tab"
-            onclick="showPage('managerPage', this)">
-        Manager Dashboard
-    </button>
-
-    <button class="tab"
             onclick="showPage('monthlyPage', this)">
         Monthly Summary
     </button>
@@ -541,6 +536,10 @@ button {
             onclick="showPage('historyPage', this)">
         History
     </button>
+
+    <a class="tab" href="manager-dashboard.html" target="_blank" rel="noopener">
+        Manager Dashboard
+    </a>
 
 </div>
 
@@ -1070,26 +1069,6 @@ placeholder="Enter remarks"></textarea>
 </section>
 
 <!-- =====================================================
-     MANAGER DASHBOARD
-===================================================== -->
-
-<section id="managerPage" class="page">
-<div class="card">
-    <h2>Manager Dashboard - Image Review</h2>
-    <p style="color:#6b7280;font-size:13px;">
-        Review the latest saved floor walk and before/after images for every store.
-    </p>
-    <div class="buttons no-print">
-        <button class="success" onclick="exportManagerPPT()">Download Manager Image Review PPT</button>
-        <button class="primary" onclick="exportExcelDashboard()">Download Excel Dashboard</button>
-    </div>
-    <div id="managerSummary" class="dashboard-grid"></div>
-    <div id="managerImageReview"></div>
-</div>
-</section>
-
-
-<!-- =====================================================
      MONTHLY
 ===================================================== -->
 
@@ -1296,7 +1275,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     calculateScore();
     renderDashboard();
-    renderManagerDashboard();
     renderMonthly();
     renderHistory();
 
@@ -1336,7 +1314,6 @@ function showPage(pageId, button) {
     button.classList.add("active");
 
     renderDashboard();
-    renderManagerDashboard();
     renderMonthly();
     renderHistory();
 }
