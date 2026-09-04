@@ -154,17 +154,15 @@ body.new-form-mode .form-tabs { display: none; }
     <div class="card">
       <h2>Forms</h2>
       <div class="form-tabs">
-        <button id="newFormTab" class="secondary" onclick="openNewFormPage()">New Form</button>
+        <button id="newFormTab" class="secondary" onclick="openNewFormPage()">Create Form</button>
         <button id="recentTab" class="secondary" onclick="showFormTab('recentSection')">Recent</button>
         <button id="myFormsTab" class="secondary" onclick="showFormTab('myFormsSection')">My Forms</button>
       </div>
       <div id="newFormSection" class="form-tab">
         <div class="forms-toolbar">
-          <button type="button" onclick="alert('Style options will be available soon.')">Palette Style</button>
-          <button type="button" onclick="alert('Form settings will be available soon.')">Settings</button>
-          <button type="button" onclick="alert('Preview will be available after creating the form.')">Preview</button>
-          <button type="button" class="collect">➤ Collect responses</button>
-          <button type="button" onclick="alert('Responses will appear after submissions.')">▥ View responses</button>
+          <button type="button" onclick="previewCurrentForm()">Preview</button>
+          <button type="button" class="collect" onclick="showGeneratedLink(currentForm)">➤ Collect responses</button>
+          <button type="button" onclick="viewResponses(currentForm)">▥ View responses</button>
           <button type="button" onclick="window.print()">Present</button>
           <button type="button" class="clear-form-icon" title="Clear all form content" aria-label="Clear all form content" onclick="clearNewForm()">&#x21BA;</button>
         </div>
@@ -192,6 +190,7 @@ body.new-form-mode .form-tabs { display: none; }
           <label for="formLink">Generated Form Link</label>
           <input id="formLink" readonly>
           <button class="primary" type="button" onclick="copyFormLink()">Copy Link</button>
+          <button class="secondary" type="button" onclick="openFormLink()">Open Form</button>
         </div>
       </div>
       <div id="recentSection" class="form-tab">
@@ -224,8 +223,18 @@ body.new-form-mode .form-tabs { display: none; }
         <form id="loginForm" class="auth-form">
             <label for="loginId">Login ID</label>
             <input id="loginId" autocomplete="username" required>
+            <label for="loginRole">Role</label>
+            <select id="loginRole">
+                <option value="">Select role</option>
+                <option>ZVM</option>
+                <option>TVM</option>
+                <option>RVM</option>
+                <option>CVM</option>
+                <option>Manager</option>
+            </select>
             <label for="loginPassword">Password</label>
             <input id="loginPassword" type="password" autocomplete="current-password" required>
+            <label class="required-toggle"><input id="rememberLogin" type="checkbox"> Remember me</label>
             <button class="primary" type="submit">Login</button>
         </form>
         <div id="loginMessage" class="auth-message"></div>
@@ -444,6 +453,7 @@ function showFormTab(tabId) {
     tabButton.classList.remove("secondary");
     tabButton.classList.add("primary");
     if (tabId === "newFormSection") {
+        currentForm = null;
         document.getElementById("questionForm").reset();
         document.getElementById("questionMessage").textContent = "";
         document.getElementById("generatedLink").style.display = "none";
@@ -469,6 +479,17 @@ function loadNewFormPage() {
     document.getElementById("questionForm").reset();
     document.getElementById("builderQuestions").innerHTML = "";
     return true;
+}
+
+function restoreLoginSession() {
+    let saved = null;
+    try {
+        saved = JSON.parse(localStorage.getItem("vmDashboardSession") ||
+            sessionStorage.getItem("vmDashboardSession") || "null");
+    } catch (error) {
+        saved = null;
+    }
+    if (saved?.loginId) hideAuthPage();
 }
 
 function getReportRecords() {
@@ -516,6 +537,22 @@ function loadSharedForm() {
                 document.getElementById("sharedMessage").className = "auth-message bad";
                 return;
             }
+            const responseKey = question.id || question.createdAt;
+            const responses = JSON.parse(localStorage.getItem("vmDashboardResponses") || "{}");
+            responses[responseKey] = responses[responseKey] || [];
+            responses[responseKey].push({
+                submittedAt: new Date().toISOString(),
+                answers: questions.reduce((result, item, index) => {
+                    if (item.type !== "section") {
+                        const controls = Array.from(form.querySelectorAll(`[name="sharedAnswer${index}"]`));
+                        result[item.text] = item.type === "file"
+                            ? controls[0].files.length
+                            : controls.filter(control => control.type === "checkbox" ? control.checked : control.checked || control.value).map(control => control.value);
+                    }
+                    return result;
+                }, {})
+            });
+            localStorage.setItem("vmDashboardResponses", JSON.stringify(responses));
             document.getElementById("sharedMessage").textContent = "Response submitted successfully.";
             document.getElementById("sharedMessage").className = "auth-message good";
         });
@@ -564,6 +601,77 @@ function openFormLink() {
 function getQuestions() {
     try { return JSON.parse(localStorage.getItem("vmDashboardQuestions") || "[]"); }
     catch (error) { return []; }
+}
+
+let currentForm = null;
+
+function getForms() {
+    try { return JSON.parse(localStorage.getItem("vmDashboardForms") || "[]"); }
+    catch (error) { return []; }
+}
+
+function saveForms(forms) {
+    localStorage.setItem("vmDashboardForms", JSON.stringify(forms));
+}
+
+function getFormResponses(form) {
+    try {
+        const responses = JSON.parse(localStorage.getItem("vmDashboardResponses") || "{}");
+        return form ? (responses[form.id || form.createdAt] || []) : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function previewCurrentForm() {
+    if (!currentForm) {
+        document.getElementById("questionMessage").textContent = "Create or select a form first.";
+        document.getElementById("questionMessage").className = "auth-message bad";
+        return;
+    }
+    window.open(createFormLink(currentForm), "_blank");
+}
+
+function viewResponses(form) {
+    if (!form) {
+        document.getElementById("questionMessage").textContent = "Create or select a form first.";
+        document.getElementById("questionMessage").className = "auth-message bad";
+        return;
+    }
+    const responseList = getFormResponses(form);
+    document.getElementById("questionMessage").textContent =
+        responseList.length ? `${responseList.length} response(s) received.` : "No responses received yet.";
+    document.getElementById("questionMessage").className = "auth-message good";
+    document.getElementById("recentList").innerHTML = responseList.length
+        ? responseList.map((response, index) => `<div class="question-item"><strong>Response ${index + 1}</strong><pre style="white-space:pre-wrap">${escapeHTML(JSON.stringify(response.answers, null, 2))}</pre></div>`).join("")
+        : `<div class="empty">No responses received yet.</div>`;
+    showFormTab("recentSection");
+}
+
+function viewResponsesById(formId) {
+    const form = getForms().find(item => item.id === formId);
+    viewResponses(form);
+}
+
+function editForm(formId) {
+    const form = getForms().find(item => item.id === formId);
+    if (!form) return;
+    currentForm = form;
+    document.getElementById("formTitle").value = form.title;
+    document.getElementById("formDescription").value = form.description || "";
+    document.getElementById("builderQuestions").innerHTML = "";
+    form.questions.forEach(question => {
+        addBuilderQuestion(question.type);
+        const card = document.querySelector("#builderQuestions .form-question-card:last-child");
+        card.querySelector(".builder-text").value = question.text;
+        card.querySelector(".builder-required").checked = Boolean(question.required);
+        const options = card.querySelectorAll(".builder-option");
+        question.options.forEach((option, index) => {
+            if (options[index]) options[index].value = option;
+        });
+    });
+    showFormTab("newFormSection");
+    showGeneratedLink(form);
 }
 
 function addBuilderQuestion(selectedType = "single") {
@@ -660,22 +768,24 @@ function clearNewForm() {
 }
 
 function renderQuestions() {
-    const questions = getQuestions();
-    const questionMarkup = questions.length
-        ? questions.map((question, index) => `
+    const forms = getForms();
+    const questionMarkup = forms.length
+        ? forms.map((form, index) => `
             <div class="question-item">
-                <strong>${index + 1}. ${escapeHTML(question.text)}</strong>
-                <div style="color:#6b7280;margin-top:5px;">Type: ${escapeHTML(question.type)}</div>
-                ${question.options.length ? `<div style="margin-top:5px;">Options: ${question.options.map(escapeHTML).join(", ")}</div>` : ""}
+                <strong>${escapeHTML(form.title)}</strong>
+                <div style="color:#6b7280;margin-top:5px;">${escapeHTML(form.description || "No description")}</div>
+                <button class="primary" type="button" onclick="editForm('${form.id}')">Edit</button>
+                <button class="secondary" type="button" onclick="viewResponsesById('${form.id}')">View responses</button>
             </div>
         `).join("")
-        : `<div class="empty">No questions created yet.</div>`;
+        : `<div class="empty">No forms created yet.</div>`;
     document.getElementById("questionList").innerHTML = questionMarkup;
-    document.getElementById("recentList").innerHTML = questions.length
-        ? questions.slice(-5).reverse().map((question, index) => `
+    document.getElementById("recentList").innerHTML = forms.length
+        ? forms.slice(0, 5).map(form => `
             <div class="question-item">
-              <strong>${escapeHTML(question.text)}</strong>
-              <div style="color:#6b7280;margin-top:5px;">Type: ${escapeHTML(question.type)}</div>
+              <strong>${escapeHTML(form.title)}</strong>
+              <div style="color:#6b7280;margin-top:5px;">Updated ${formatDate(new Date(form.updatedAt || form.createdAt).toISOString())}</div>
+              <button class="primary" type="button" onclick="editForm('${form.id}')">Open form</button>
             </div>
         `).join("")
         : `<div class="empty">No recent forms yet.</div>`;
@@ -697,14 +807,23 @@ document.getElementById("questionForm").addEventListener("submit", event => {
         document.getElementById("questionMessage").className = "auth-message bad";
         return;
     }
-    const form = { title: document.getElementById("formTitle").value.trim(), description: document.getElementById("formDescription").value.trim(), questions, createdAt: Date.now() };
-    const forms = JSON.parse(localStorage.getItem("vmDashboardForms") || "[]");
-    forms.push(form);
-    localStorage.setItem("vmDashboardForms", JSON.stringify(forms));
+    const form = {
+        id: currentForm?.id || `form-${Date.now()}`,
+        title: document.getElementById("formTitle").value.trim(),
+        description: document.getElementById("formDescription").value.trim(),
+        questions,
+        createdAt: currentForm?.createdAt || Date.now(),
+        updatedAt: Date.now()
+    };
+    const forms = getForms().filter(item => item.id !== form.id);
+    forms.unshift(form);
+    saveForms(forms);
+    currentForm = form;
     document.getElementById("questionMessage").textContent = "Form created successfully.";
     document.getElementById("questionMessage").className = "auth-message good";
     showGeneratedLink(form);
     renderQuestions();
+    showFormTab("myFormsSection");
 });
 
 document.getElementById("userForm").addEventListener("submit", async event => {
@@ -728,8 +847,9 @@ document.getElementById("userForm").addEventListener("submit", async event => {
         users.push({ loginId, name: loginId, role: document.getElementById("newRole").value, access: "Dashboard access", passwordHash: await hashPassword(password) });
         localStorage.setItem("vmDashboardUsers", JSON.stringify(users));
         event.target.reset();
-        message.textContent = "User created successfully.";
+        message.textContent = "User created successfully. Please log in.";
         message.className = "auth-message good";
+        showLoginCard();
     } catch (error) {
         message.textContent = error.message;
         message.className = "auth-message bad";
@@ -741,13 +861,24 @@ document.getElementById("loginForm").addEventListener("submit", async event => {
     const message = document.getElementById("loginMessage");
     try {
         const loginId = document.getElementById("loginId").value.trim();
+        const selectedRole = document.getElementById("loginRole").value;
         const passwordHash = await hashPassword(document.getElementById("loginPassword").value);
         const user = getUsers().find(item =>
-            item.loginId.toLowerCase() === loginId.toLowerCase() && item.passwordHash === passwordHash
+            item.loginId.toLowerCase() === loginId.toLowerCase() &&
+            item.passwordHash === passwordHash &&
+            (!selectedRole || item.role === selectedRole || (selectedRole === "Manager" && item.role === "Manager"))
         );
             message.textContent = user ? `Login successful. Welcome, ${user.name}. Access: ${user.access || user.role}.` : "Invalid Login ID or password.";
         message.className = `auth-message ${user ? "good" : "bad"}`;
-        if (user) hideAuthPage();
+        if (user) {
+            const session = { loginId: user.loginId, role: user.role };
+            if (document.getElementById("rememberLogin").checked) {
+                localStorage.setItem("vmDashboardSession", JSON.stringify(session));
+            } else {
+                sessionStorage.setItem("vmDashboardSession", JSON.stringify(session));
+            }
+            hideAuthPage();
+        }
     } catch (error) {
         message.textContent = error.message;
         message.className = "auth-message bad";
@@ -789,12 +920,23 @@ async function exportManagerPPT() {
         slide.addText(`${store[0]} - ${store[1]}`, { x: .45, y: .3, w: 12.4, h: .4, fontSize: 18, bold: true });
         if (!record) return slide.addText("No floor walk recorded.", { x: .7, y: 3, w: 12, h: .4, fontSize: 18, color: "D97706", align: "center" });
         slide.addText(`Date: ${formatDate(record.date)}   Score: ${record.score}%   Issues: ${record.issues}   Status: ${record.status}`, { x: .55, y: .85, w: 12, h: .3, fontSize: 11 });
-        const image = (record.images || []).find(item => item.before || item.after);
-        if (image?.before) slide.addImage({ data: image.before, x: .65, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
-        if (image?.after) slide.addImage({ data: image.after, x: 7.05, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
-        if (!image) slide.addText("No before/after images saved.", { x: .7, y: 3, w: 12, h: .4, fontSize: 18, color: "D97706", align: "center" });
-        slide.addText("BEFORE", { x: .65, y: 5.8, w: 5.55, h: .25, bold: true, color: "991B1B", align: "center" });
-        slide.addText("AFTER", { x: 7.05, y: 5.8, w: 5.55, h: .25, bold: true, color: "15803D", align: "center" });
+        const images = (record.images || []).filter(item => item.before || item.after);
+        if (!images.length) {
+            slide.addText("No before/after images saved.", { x: .7, y: 3, w: 12, h: .4, fontSize: 18, color: "D97706", align: "center" });
+        } else {
+            images.forEach((image, index) => {
+                const imageSlide = index === 0 ? slide : pptx.addSlide();
+                if (index > 0) {
+                    imageSlide.addText(`${store[0]} - ${store[1]}`, { x: .45, y: .3, w: 12.4, h: .4, fontSize: 18, bold: true });
+                    imageSlide.addText(`Date: ${formatDate(record.date)}   Score: ${record.score}%   Issues: ${record.issues}   Status: ${record.status}`, { x: .55, y: .85, w: 12, h: .3, fontSize: 11 });
+                }
+                imageSlide.addText(`IMAGE PAIR ${index + 1} OF ${images.length}`, { x: .55, y: 1.15, w: 12, h: .25, fontSize: 11, bold: true, color: "6B7280", align: "center" });
+                if (image.before) imageSlide.addImage({ data: image.before, x: .65, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+                if (image.after) imageSlide.addImage({ data: image.after, x: 7.05, y: 1.45, w: 5.55, h: 4.2, sizingContain: true });
+                imageSlide.addText("BEFORE", { x: .65, y: 5.8, w: 5.55, h: .25, bold: true, color: "991B1B", align: "center" });
+                imageSlide.addText("AFTER", { x: 7.05, y: 5.8, w: 5.55, h: .25, bold: true, color: "15803D", align: "center" });
+            });
+        }
     });
     await pptx.writeFile({ fileName: `VM-Manager-Image-Review-${document.getElementById("reportDate").value || "all-dates"}.pptx` });
 }
@@ -803,7 +945,8 @@ window.addEventListener("storage", refreshDashboard);
 ensureDefaultUser();
 refreshDashboard();
 loadSharedForm();
-loadNewFormPage();
+if (!loadNewFormPage()) restoreLoginSession();
+renderQuestions();
 </script>
 </body>
 </html>
