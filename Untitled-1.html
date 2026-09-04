@@ -1228,6 +1228,96 @@ const categories = [
     "Action Points"
 ];
 
+const checklistGroups = [
+    {
+        name: "Entrance",
+        points: [
+            "Entrance Glass is clean, and uncluttered",
+            "Digital Standees & Entrance Screen Communication @the store entrance are Playing As per the guidelines. (If Applicable)",
+            "Does your store has Entrance Pop Shop?",
+            "Has the POP SHOP mannequin styling and placement as per theme/Docket? (as per HO guidelines)",
+            "Entrance Pop Shop Styling picture"
+        ]
+    },
+    {
+        name: "Rangmanch",
+        points: [
+            "Full size Options of merchandise displayed on mannequins & Accessories (bags, jewelry, shoes) are correctly placed?",
+            "Verify all promotional signages are current and correctly placed. Cash Counter All Signages are Placed?",
+            "All co-ordinates need to be displayed on loops (4th Hole from top), Detailed guideline is mentioned in SDM?",
+            "Is all the hanging merchandise Properly Steam Ironed?",
+            "Merchandise is folded/hung neatly and organized by category Wise & Size Wise?",
+            "Signages are Placed as per the Communication Checklist & Signages Fonts and Format as per the Guidelines?",
+            "Fixture Alignment as per the Current Layout?",
+            "All lights are functioning and highlighting key areas?",
+            "Rangmanch Section Picture"
+        ]
+    },
+    {
+        name: "Akriti",
+        points: [
+            "Akriti Section Picture",
+            "Does your store has Marigold Lane ?",
+            "Marigold Lane Section Picture"
+        ]
+    },
+    {
+        name: "Women",
+        points: [
+            "All co-ordinates need to be displayed on loops (4th Hole from top), Detailed guideline is mentioned in SDM?2",
+            "Has the sleeves rollup & Button Down Done, Is all the hanging merchandise Properly Steam Ironed?",
+            "Merchandise is folded/hung neatly and organized by category Wise & Size Wise?2",
+            "Signages are Placed as per the Communication Checklist & Signages Fonts and Format as per the Guidelines?2",
+            "Fit Talkers in form of Shelf talkers for Denims, Chinos?",
+            "Fixture Alignment as per the Current Layout?2",
+            "Honey Section Picture",
+            "People (W) Section Picture",
+            "Anabelle Section Picture",
+            "AJILE (W) Section Picture",
+            "Dreamz Section Picture",
+            "SF Jeans (W) Section Picture"
+        ]
+    },
+    {
+        name: "Men",
+        points: [
+            "All co-ordinates need to be displayed on loops (4th Hole from top), Detailed guideline is mentioned in SDM?3",
+            "Signages are Placed as per the Communication Checklist & Signages Fonts and Format as per the Guidelines?3",
+            "Has the sleeves rollup & Button Down Done, Is all the hanging merchandise Properly Steam Ironed?2",
+            "Fixture Alignment as per the Current Layout?3",
+            "Merchandise is folded/hung neatly and organized by category Wise & Size Wise?2",
+            "Fit Talkers in form of Shelf talkers for Denims, Chinos?2",
+            "All lights are functioning and highlighting key areas.?2",
+            "7Alt Section Picture",
+            "Peregrine Section Picture",
+            "People (M) Section Picture",
+            "Does your store has Street 808?",
+            "Street 808 Section Picture",
+            "Ajile (M) Section Picture",
+            "SF (M) Section Picture",
+            "Does your store has SF Character Shop (M)?",
+            "SF Character Shop (M) Section Picture",
+            "Indus Route Section Picture"
+        ]
+    },
+    {
+        name: "Kids & Final Checks",
+        points: [
+            "All co-ordinates need to be displayed on loops (4th Hole from top), Detailed guideline is mentioned in SDM?4",
+            "Has the sleeves rollup & Button Down Done, is all the hanging merchandise Properly Steam Ironed?3",
+            "Size Wise Displayed on the Browsers and Walls?",
+            "Signages are Placed as per the Communication Checklist & Signage's Fonts and Format as per the Guidelines?",
+            "Fixture Alignment as per the Current Layout?",
+            "All lights are functioning and highlighting key areas?",
+            "2 - 7 Girls Section Picture",
+            "2 - 7 Boys Section Picture",
+            "7 - 14 Girls Section Picture",
+            "7 - 14 Boys Section Picture",
+            "Note any deviations from VM standards, Share the feedback pointers and Pictures with store VM groups ?"
+        ]
+    }
+];
+
 const months = [
     "January",
     "February",
@@ -1278,6 +1368,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     populateYears();
 
+    renderChecklistPoints();
     setupChecklist();
 
     /*
@@ -1291,6 +1382,22 @@ document.addEventListener("DOMContentLoaded", function() {
     renderHistory();
 
 });
+
+function renderChecklistPoints() {
+    const body = document.querySelector("#checklistTable tbody");
+    body.innerHTML = checklistGroups.map(group => `
+        <tr class="section-row"><td colspan="5">${escapeHTML(group.name)}</td></tr>
+        ${group.points.map(point => `
+            <tr data-category="${escapeHTML(group.name)}">
+                <td>${escapeHTML(group.name)}</td>
+                <td>${escapeHTML(point)}</td>
+                <td class="check-cell"><input type="checkbox" class="ok"></td>
+                <td class="check-cell"><input type="checkbox" class="issue"></td>
+                <td><input type="text" class="remark"></td>
+            </tr>
+        `).join("")}
+    `).join("");
+}
 
 function populateStores() {
     const select = document.getElementById("storeSelect");
@@ -1973,7 +2080,8 @@ function renderDashboard() {
 
     categoryDiv.innerHTML = "";
 
-    categories.forEach(category => {
+    checklistGroups.forEach(group => {
+        const category = group.name;
 
         let total = 0;
         let passed = 0;
