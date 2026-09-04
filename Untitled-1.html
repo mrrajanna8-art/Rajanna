@@ -921,7 +921,7 @@ same area after correction.
 
 <button class="primary no-print"
         onclick="addImagePair()">
-    + Add Before / After (up to 10 pairs)
+    + Add Before / After (up to 5 pairs)
 </button>
 
 </div>
@@ -1309,6 +1309,13 @@ const checklistGroups = [
     }
 ];
 
+checklistGroups.forEach(group => {
+    group.points = group.points.filter(point =>
+        !/picture|pictures/i.test(point) &&
+        !/^Note any deviations/i.test(point)
+    );
+});
+
 const months = [
     "January",
     "February",
@@ -1550,8 +1557,8 @@ function calculateScore() {
 
 function addImagePair() {
     const existingPairs = document.querySelectorAll(".image-pair").length;
-    if (existingPairs >= 10) {
-        alert("You can upload up to 10 Before images and 10 After images.");
+    if (existingPairs >= 5) {
+        alert("You can upload up to 5 Before images and 5 After images.");
         return;
     }
 
@@ -1785,10 +1792,10 @@ function updateImagePairControls() {
     }
 
     const pairCount = document.querySelectorAll(".image-pair").length;
-    addButton.disabled = pairCount >= 10;
-    addButton.textContent = pairCount >= 10
-        ? "10 Before / 10 After images added"
-        : `+ Add Before / After (${pairCount}/10 pairs)`;
+    addButton.disabled = pairCount >= 5;
+    addButton.textContent = pairCount >= 5
+        ? "5 Before / 5 After images added"
+        : `+ Add Before / After (${pairCount}/5 pairs)`;
 }
 
 
