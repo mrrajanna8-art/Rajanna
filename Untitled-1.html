@@ -529,7 +529,7 @@ button {
 
     <button class="tab"
             onclick="showPage('monthlyPage', this)">
-        Monthly Summary
+        Summary
     </button>
 
     <button class="tab"
@@ -996,6 +996,18 @@ placeholder="Enter remarks"></textarea>
 ===================================================== -->
 
 <section id="dashboardPage" class="page">
+
+<div class="card no-print">
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="dashboardDate">Select Date</label>
+            <input type="date" id="dashboardDate">
+        </div>
+        <div class="form-group" style="justify-content:end;">
+            <button class="primary" type="button" onclick="applyDashboardDate()">Show Date</button>
+        </div>
+    </div>
+</div>
 
 <div class="dashboard-grid">
 
@@ -1899,7 +1911,10 @@ function getRecords() {
 
 function renderDashboard() {
 
-    const records = getRecords();
+    const selectedDate = document.getElementById("dashboardDate")?.value;
+    const records = getRecords().filter(record =>
+        !selectedDate || record.date === selectedDate
+    );
 
     const walks = records.length;
 
@@ -2081,6 +2096,10 @@ function renderDashboard() {
 
     renderStoreDirectory(records);
 
+}
+
+function applyDashboardDate() {
+    renderDashboard();
 }
 
 function renderStoreDirectory(records) {
