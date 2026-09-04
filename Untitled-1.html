@@ -1227,7 +1227,6 @@ const checklistGroups = [
             "Digital Standees & Entrance Screen Communication @the store entrance are Playing As per the guidelines. (If Applicable)",
             "Does your store has Entrance Pop Shop?",
             "Has the POP SHOP mannequin styling and placement as per theme/Docket? (as per HO guidelines)",
-            "Entrance Pop Shop Styling picture"
         ]
     },
     {
@@ -1241,15 +1240,12 @@ const checklistGroups = [
             "Signages are Placed as per the Communication Checklist & Signages Fonts and Format as per the Guidelines?",
             "Fixture Alignment as per the Current Layout?",
             "All lights are functioning and highlighting key areas?",
-            "Rangmanch Section Picture"
         ]
     },
     {
         name: "Akriti",
         points: [
-            "Akriti Section Picture",
             "Does your store has Marigold Lane ?",
-            "Marigold Lane Section Picture"
         ]
     },
     {
@@ -1261,12 +1257,6 @@ const checklistGroups = [
             "Signages are Placed as per the Communication Checklist & Signages Fonts and Format as per the Guidelines?2",
             "Fit Talkers in form of Shelf talkers for Denims, Chinos?",
             "Fixture Alignment as per the Current Layout?2",
-            "Honey Section Picture",
-            "People (W) Section Picture",
-            "Anabelle Section Picture",
-            "AJILE (W) Section Picture",
-            "Dreamz Section Picture",
-            "SF Jeans (W) Section Picture"
         ]
     },
     {
@@ -1279,16 +1269,8 @@ const checklistGroups = [
             "Merchandise is folded/hung neatly and organized by category Wise & Size Wise?2",
             "Fit Talkers in form of Shelf talkers for Denims, Chinos?2",
             "All lights are functioning and highlighting key areas.?2",
-            "7Alt Section Picture",
-            "Peregrine Section Picture",
-            "People (M) Section Picture",
             "Does your store has Street 808?",
-            "Street 808 Section Picture",
-            "Ajile (M) Section Picture",
-            "SF (M) Section Picture",
             "Does your store has SF Character Shop (M)?",
-            "SF Character Shop (M) Section Picture",
-            "Indus Route Section Picture"
         ]
     },
     {
@@ -1300,21 +1282,10 @@ const checklistGroups = [
             "Signages are Placed as per the Communication Checklist & Signage's Fonts and Format as per the Guidelines?",
             "Fixture Alignment as per the Current Layout?",
             "All lights are functioning and highlighting key areas?",
-            "2 - 7 Girls Section Picture",
-            "2 - 7 Boys Section Picture",
-            "7 - 14 Girls Section Picture",
-            "7 - 14 Boys Section Picture",
-            "Note any deviations from VM standards, Share the feedback pointers and Pictures with store VM groups ?"
+            "Note any deviations from VM standards and share the feedback pointers with store VM groups ?"
         ]
     }
 ];
-
-checklistGroups.forEach(group => {
-    group.points = group.points.filter(point =>
-        !/picture|pictures/i.test(point) &&
-        !/^Note any deviations/i.test(point)
-    );
-});
 
 const months = [
     "January",
