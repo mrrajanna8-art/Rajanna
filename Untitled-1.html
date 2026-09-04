@@ -921,7 +921,7 @@ same area after correction.
 
 <button class="primary no-print"
         onclick="addImagePair()">
-    + Add Before / After (up to 10 pairs)
+    + Add Before / After
 </button>
 
 </div>
@@ -1527,12 +1527,6 @@ function calculateScore() {
 ========================================================= */
 
 function addImagePair() {
-    const existingPairs = document.querySelectorAll(".image-pair").length;
-    if (existingPairs >= 10) {
-        alert("You can upload up to 10 Before images and 10 After images.");
-        return;
-    }
-
     imagePairCounter++;
 
     const id = imagePairCounter;
@@ -1762,11 +1756,8 @@ function updateImagePairControls() {
         return;
     }
 
-    const pairCount = document.querySelectorAll(".image-pair").length;
-    addButton.disabled = pairCount >= 10;
-    addButton.textContent = pairCount >= 10
-        ? "10 Before / 10 After images added"
-        : `+ Add Before / After (${pairCount}/10 pairs)`;
+    addButton.disabled = false;
+    addButton.textContent = "+ Add Before / After";
 }
 
 
